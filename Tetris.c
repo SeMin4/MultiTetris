@@ -10,6 +10,7 @@
 #define RIGHTEDGE 18
 #define ROW 20
 #define SPACE 32
+#define WHITESPACE 30
 
 void interface();
 void singlemode(int,int);
@@ -23,6 +24,8 @@ void c();
 int kbhit(void);
 void current_block_delte();
 void draw_Borad(int, int);
+void block_extra();
+void extra_block_print();
 void new_block();
 void key_left();
 void key_right();
@@ -464,12 +467,15 @@ void a(){
 		type[i] = rand()% 16777216;
 		type[i] %= 7;
 	}
+block_extra();
 	while(1){
 		if(new_block_flag == 1){
 			block_type = type[0];
 			new_block();
 		}		
 		draw_Borad(y_pos, x_pos);
+		//mmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmm
+		
 		if(kbhit()){
 			ch = getch();
 			switch(ch){//getch() 
@@ -567,7 +573,7 @@ void draw_Borad(int y_pos, int x_pos){
 	for(int i = 0; i<40;i++){
 		for(int j = 0; j<32; j++){
 			if(Board[i/2][j/2]!=Real_game_Board[i/2][j/2]){
-				move(y_pos + i, x_pos+j);
+				move(y_pos + i, WHITESPACE+x_pos+j);
 				if(Real_game_Board[i/2][j/2] == 0)
 					addstr(blank);
 				else if(Real_game_Board[i/2][j/2] == 1){
@@ -586,6 +592,8 @@ void draw_Borad(int y_pos, int x_pos){
 	for(int i = 0 ; i<20; i++)
 		for(int j = 0; j<16; j++)
 			Board[i][j] = Real_game_Board[i][j]; 
+	
+	
 }
 int kbhit(void){
 	int ch = getch();
@@ -630,6 +638,8 @@ void new_block(){
 		}		
 	}
 	new_block_flag = 0;
+
+	block_extra();
 	
 }
 void key_left(){
@@ -900,4 +910,46 @@ void yesorno2()
 
 }
 
+void block_extra()
+{
+	mvprintw(8, WHITESPACE+40,"ㅡㅡㅡㅡ N E X T ㅡㅡㅡㅡ");
+	mvprintw(9, WHITESPACE+40,"ㅣ                     ㅣ");
+	mvprintw(10,WHITESPACE+40,"ㅣ                     ㅣ");	
+	mvprintw(11,WHITESPACE+40,"ㅣ                     ㅣ");
+	mvprintw(12,WHITESPACE+40,"ㅣ                     ㅣ");
+	mvprintw(13,WHITESPACE+40,"ㅣ                     ㅣ");
+	mvprintw(14,WHITESPACE+40,"ㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡ");
 
+	mvprintw(17,WHITESPACE+40,"ㅡㅡㅡㅡ N E X T ㅡㅡㅡㅡ");
+	mvprintw(18,WHITESPACE+40,"ㅣ                     ㅣ");
+	mvprintw(18,WHITESPACE+40,"ㅣ                     ㅣ");	
+	mvprintw(20,WHITESPACE+40,"ㅣ                     ㅣ");
+	mvprintw(21,WHITESPACE+40,"ㅣ                     ㅣ");
+	mvprintw(22,WHITESPACE+40,"ㅣ                     ㅣ");
+	mvprintw(23,WHITESPACE+40,"ㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡ");
+
+	mvprintw(12,2,"ㅡㅡㅡㅡ K E E P ㅡㅡㅡㅡ");
+	mvprintw(13,2,"ㅣ                     ㅣ");
+	mvprintw(14,2,"ㅣ                     ㅣ");	
+	mvprintw(15,2,"ㅣ                     ㅣ");
+	mvprintw(16,2,"ㅣ                     ㅣ");
+	mvprintw(17,2,"ㅣ                     ㅣ");
+	mvprintw(18,2,"ㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡ");
+	refresh();
+}
+
+void extra_block_print()
+{
+	int i,j;
+
+	for(i=1; i<5; i++)
+	{
+		for(j=0; j<5;j++)
+		{
+			if(Block[type[1][0][i][j]==2)
+			{
+				
+			}
+		}
+	}
+}
