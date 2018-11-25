@@ -23,7 +23,7 @@ void c();
 int kbhit(void);
 void current_block_delte();
 void draw_Borad(int, int);
-void new_block();
+int new_block();
 void key_left();
 void key_right();
 void key_down();
@@ -36,6 +36,7 @@ void yesorno2();
 void quit();
 void keep_change();
 void change(int *a , int *b);
+void gameover();
 int mode = 0;
 int keep_block_type = -1;
 int type[3];
@@ -467,7 +468,8 @@ void a(){
 	while(1){
 		if(new_block_flag == 1){
 			block_type = type[0];
-			new_block();
+			if(new_block() == -1)
+				return;
 		}		
 		draw_Borad(y_pos, x_pos);
 		if(kbhit()){
@@ -568,9 +570,9 @@ void draw_Borad(int y_pos, int x_pos){
 		for(int j = 0; j<32; j++){
 			if(Board[i/2][j/2]!=Real_game_Board[i/2][j/2]){
 				move(y_pos + i, x_pos+j);
-				if(Real_game_Board[i/2][j/2] == 0)
-					addstr(blank);
-				else if(Real_game_Board[i/2][j/2] == 1){
+				//if(Real_game_Board[i/2][j/2] == 0)
+					//addstr(blank);
+				if(Real_game_Board[i/2][j/2] == 1){
 					addstr(wall);
 				}
 				else if(Real_game_Board[i/2][j/2] == 2){
@@ -619,17 +621,27 @@ void change(int *a, int *b){
 	*a = *b;
 	*b = temp;
 }
-void new_block(){
+int new_block(){
 	block_xpos = 5;
 	block_ypos = 0;	
 	block_rotate = 0;
 	for(int i = 0; i<5; i++){			
 		for(int j = 0; j<5; j++){
-				if(Block [block_type][block_rotate][i][j] == 2)
-					Real_game_Board[block_ypos+i][block_xpos+j] = 2;
+				if(Block [block_type][block_rotate][i][j] == 2){
+					if(Real_game_Board[block_ypos+i][block_xpos+j] == 3){
+						gameover();
+						return -1;
+					}
+					else{
+						Real_game_Board[block_ypos+i][block_xpos+j] = 2;	
+					}
+						
+				}
+					
 		}		
 	}
 	new_block_flag = 0;
+	return 1;
 	
 }
 void key_left(){
@@ -744,7 +756,15 @@ void delete_block(){
 		}
 	}
 }
+void gameover(){
+	int y, x, ch;
+	clear();
+	getmaxyx(stdscr,y,x);
+	mvprintw(15,15,"GAME OVER!");
+	refresh();
+	sleep(5);
 
+}
 
 void b(){
 	int ch;
