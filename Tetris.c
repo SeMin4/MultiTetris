@@ -21,6 +21,7 @@ void a();
 void b();
 void c();
 int kbhit(void);
+void current_block_delte();
 void draw_Borad(int, int);
 void new_block();
 void key_left();
@@ -32,8 +33,13 @@ void block_inactive();
 void delete_block();
 void yesorno1();
 void yesorno2();
-
+void quit();
+void keep_change();
+void change(int *a , int *b);
 int mode = 0;
+int keep_block_type = -1;
+int type[3];
+int block_type, keep_count= 0;
 int block_xpos, block_ypos, block_rotate, crush_flag = 0, before_inactive_check = 0; //ingame blcok x_pos, y_pos, block_rorate, crush_flag
 int new_block_flag = 1;
 int Board[20][16] = {
@@ -435,7 +441,6 @@ void a(){
 	int x_pos = 0;
 	int dir = 1;
 	
-	int type[3];	
 		
 	clear();
 	cbreak();
@@ -454,23 +459,15 @@ void a(){
 	for(int i = 0 ; i< 20; i++)
 		for(int j = 0; j<16;j++)
 			Board[i][j] = 100;
-	//EMPTY BOARD draw
-	//draw_Borad(y_pos, x_pos);	
-	//refresh();
-	/*clear();
-	refresh();
-	endwin();
-	for(int i = 0; i<20; i++){
-		for(int j = 0; j<13; j++){
-			printf("%d " ,Real_game_Board[i][j]);
-		}
-		printf("\n");
+	srand((unsigned)time(NULL));
+	for(int i = 0; i<3; i++){
+		type[i] = rand()% 16777216;
+		type[i] %= 7;
 	}
-	break;*/
 	while(1){
 		if(new_block_flag == 1){
+			block_type = type[0];
 			new_block();
-			
 		}		
 		draw_Borad(y_pos, x_pos);
 		if(kbhit()){
@@ -504,12 +501,40 @@ void a(){
 					}
 					before_inactive_check = 3;
 					break;
+				case 9:
+					if(keep_block_type == -1){
+						current_block_delte();
+						keep_change();
+						keep_count = 1;		
+					}	
+					else
+					{
+						if(keep_count == 2){
+
+						}
+						else if(keep_count == 1){
+							current_block_delte();
+							change(&keep_block_type,&type[0]);
+							new_block_flag = 1;
+							keep_count = 2;
+						}
+					} 
+					break;
+				case 81:
+					quit();
+					return;
+				case 113:
+					quit();
+					return;
 				default:
 					break;
 			}
 			if(crush_check(block_xpos,block_ypos+1, block_rotate)==false&&(before_inactive_check == 3)){//check_inactive
-			block_inactive();
-			delete_block();				
+				block_inactive();
+				if(keep_count == 2){
+					keep_count = 1;
+				}
+				delete_block();				
 			}
 			else if(crush_check(block_xpos,block_ypos+1, block_rotate)==false){
 				before_inactive_check++;
@@ -522,6 +547,9 @@ void a(){
 			}
 			if(crush_check(block_xpos,block_ypos+1, block_rotate)==false&&(before_inactive_check == 3)){//check_inactive
 				block_inactive();
+				if(keep_count == 2){
+					keep_count = 1;
+				}
 				delete_block();				
 			}
 			else if(crush_check(block_xpos,block_ypos+1, block_rotate)==false){
@@ -530,12 +558,11 @@ void a(){
 			usleep(500000);
 		}
 		
-		//refresh(); 
 	}
 }
 void draw_Borad(int y_pos, int x_pos){
 	char wall[] = "@";	
-	char blank[] = "   ";
+	char blank[] = " ";
 	char fill[] = "*";
 	for(int i = 0; i<40;i++){
 		for(int j = 0; j<32; j++){
@@ -569,13 +596,36 @@ int kbhit(void){
 		return 0;
 	}
 }
+void current_block_delte(){
+	for(int i = 0; i< 5; i++){
+		for(int j = 0; j< 5; j++){
+			if(Block[block_type][block_rotate][i][j] == 2){
+				Real_game_Board[block_ypos+i][block_xpos+j] = 0;
+			}
+		}
+	}
+}
+void keep_change(){
+	change(&keep_block_type,&type[0]);
+	type[0] = type[1];
+	type[1] = type[2];
+	type[2] = rand()%16777216;
+	type[2] = type[2]% 7;
+	new_block_flag = 1;
+}
+void change(int *a, int *b){
+	int temp;
+	temp = *a;
+	*a = *b;
+	*b = temp;
+}
 void new_block(){
 	block_xpos = 5;
 	block_ypos = 0;	
 	block_rotate = 0;
 	for(int i = 0; i<5; i++){			
 		for(int j = 0; j<5; j++){
-				if(Block [0][block_rotate][i][j] == 2)
+				if(Block [block_type][block_rotate][i][j] == 2)
 					Real_game_Board[block_ypos+i][block_xpos+j] = 2;
 		}		
 	}
@@ -585,7 +635,7 @@ void new_block(){
 void key_left(){
 	for(int i = 0; i< 5; i++){
 		for(int j = 0; j< 5; j++){
-			if(Block[0][block_rotate][i][j] == 2){
+			if(Block[block_type][block_rotate][i][j] == 2){
 				Real_game_Board[block_ypos+i][block_xpos+j] = 0;
 			}
 		}
@@ -593,7 +643,7 @@ void key_left(){
 	block_xpos--;
 	for(int i = 0; i< 5; i++){
 		for(int j = 0; j< 5; j++){
-			if(Block[0][block_rotate][i][j] == 2){
+			if(Block[block_type][block_rotate][i][j] == 2){
 				Real_game_Board[block_ypos+i][block_xpos+j] = 2;
 			}
 		}
@@ -602,7 +652,7 @@ void key_left(){
 void key_right(){
 	for(int i = 0; i< 5; i++){
 		for(int j = 0; j< 5; j++){
-			if(Block[0][block_rotate][i][j] == 2){
+			if(Block[block_type][block_rotate][i][j] == 2){
 				Real_game_Board[block_ypos+i][block_xpos+j] = 0;
 			}
 		}
@@ -610,7 +660,7 @@ void key_right(){
 	block_xpos++;
 	for(int i = 0; i< 5; i++){
 		for(int j = 0; j< 5; j++){
-			if(Block[0][block_rotate][i][j] == 2){
+			if(Block[block_type][block_rotate][i][j] == 2){
 				Real_game_Board[block_ypos+i][block_xpos+j] = 2;
 			}
 		}
@@ -619,7 +669,7 @@ void key_right(){
 void key_down(){
 	for(int i = 0; i< 5; i++){
 		for(int j = 0; j< 5; j++){
-			if(Block[0][block_rotate][i][j] == 2){
+			if(Block[block_type][block_rotate][i][j] == 2){
 				Real_game_Board[block_ypos+i][block_xpos+j] = 0;
 			}
 		}
@@ -627,7 +677,7 @@ void key_down(){
 	block_ypos++;
 	for(int i = 0; i< 5; i++){
 		for(int j = 0; j< 5; j++){
-			if(Block[0][block_rotate][i][j] == 2){
+			if(Block[block_type][block_rotate][i][j] == 2){
 				Real_game_Board[block_ypos+i][block_xpos+j] = 2;
 			}
 		}
@@ -636,7 +686,7 @@ void key_down(){
 void key_up(){
 	for(int i = 0; i< 5; i++){
 		for(int j = 0; j< 5; j++){
-			if(Block[0][block_rotate][i][j] == 2){
+			if(Block[block_type][block_rotate][i][j] == 2){
 				Real_game_Board[block_ypos+i][block_xpos+j] = 0;
 			}
 		}
@@ -645,7 +695,7 @@ void key_up(){
 	block_rotate %= 4;
 	for(int i = 0; i< 5; i++){
 		for(int j = 0; j< 5; j++){
-			if(Block[0][block_rotate][i][j] == 2){
+			if(Block[block_type][block_rotate][i][j] == 2){
 				Real_game_Board[block_ypos+i][block_xpos+j] = 2;
 			}
 		}
@@ -654,7 +704,7 @@ void key_up(){
 int crush_check(int check_bx, int check_by, int check_rotate){
 	for(int i = 0; i <5; i++){
 		for(int j = 0; j<5; j++){
-			if((Block[0][check_rotate][i][j]==2)&&((Real_game_Board[check_by+i][check_bx+j]==3)||(Real_game_Board[check_by+i][check_bx+j]==1)))
+			if((Block[block_type][check_rotate][i][j]==2)&&((Real_game_Board[check_by+i][check_bx+j]==3)||(Real_game_Board[check_by+i][check_bx+j]==1)))
 				return false;
 		}
 	}
@@ -663,11 +713,15 @@ int crush_check(int check_bx, int check_by, int check_rotate){
 void block_inactive(){
 	for(int i = 0; i< 5; i++){
 		for(int j = 0; j< 5; j++){
-			if(Block[0][block_rotate][i][j] == 2){
+			if(Block[block_type][block_rotate][i][j] == 2){
 				Real_game_Board[block_ypos+i][block_xpos+j] = 3;
 			}
 		}
 	}
+	type[0] = type[1];
+	type[1] = type[2];
+	type[2] = rand()%16777216;
+	type[2] = type[2]% 7;
 	new_block_flag = 1;
 }
 
@@ -749,7 +803,6 @@ void keyinformation()
 	mvprintw(36,84," Backspace : 뒤로가기 ");	
 	mvprintw(43,65, "**************************************************************");
 	refresh();
-	
 	while(1)
 	{
 		
@@ -784,9 +837,36 @@ void keyinformation()
 			continue;
 		
 		break;
-	}
+	}	
 }
-
+void quit()
+{
+	int ch;
+	yesorno1();
+	while(1)
+	{
+		ch = getch();
+		if( ch == 10 )
+		{
+			break;
+		}
+		else if( ch == KEY_RIGHT )
+		{
+			yesorno2();
+			ch = getch();
+			if( ch == KEY_RIGHT)
+			{
+				yesorno1();
+				continue;
+			}
+			else if( ch == 10 )
+				continue;
+				
+		}
+	}
+		
+	
+}
 void c()
 {
 	

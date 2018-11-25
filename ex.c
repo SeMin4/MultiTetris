@@ -22,6 +22,9 @@ void main()
 		printf("     %d", keep);
 		printf("\n");
 
+int keep_block_type = -1;
+	keep_count = 0;
+	block_tpye = ran;
 		ch = getch();
 		if (ch == 48)
 		{
