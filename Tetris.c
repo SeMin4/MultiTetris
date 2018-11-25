@@ -24,13 +24,9 @@ void c();
 int kbhit(void);
 void current_block_delte();
 void draw_Borad(int, int);
-<<<<<<< HEAD
-int new_block();
-=======
 void block_extra();
 void extra_block_print();
 void new_block();
->>>>>>> bb890fe4c5f5175fb5713278be871d7a64492960
 void key_left();
 void key_right();
 void key_down();
@@ -579,17 +575,10 @@ void draw_Borad(int y_pos, int x_pos){
 	for(int i = 0; i<40;i++){
 		for(int j = 0; j<32; j++){
 			if(Board[i/2][j/2]!=Real_game_Board[i/2][j/2]){
-<<<<<<< HEAD
-				move(y_pos + i, x_pos+j);
-				//if(Real_game_Board[i/2][j/2] == 0)
-					//addstr(blank);
-				if(Real_game_Board[i/2][j/2] == 1){
-=======
 				move(y_pos + i, WHITESPACE+x_pos+j);
 				if(Real_game_Board[i/2][j/2] == 0)
 					addstr(blank);
 				else if(Real_game_Board[i/2][j/2] == 1){
->>>>>>> bb890fe4c5f5175fb5713278be871d7a64492960
 					addstr(wall);
 				}
 				else if(Real_game_Board[i/2][j/2] == 2){
@@ -660,12 +649,9 @@ int new_block(){
 		}		
 	}
 	new_block_flag = 0;
-<<<<<<< HEAD
 	return 1;
-=======
 
-	block_extra();
->>>>>>> bb890fe4c5f5175fb5713278be871d7a64492960
+	//block_extra();
 	
 }
 void key_left(){
