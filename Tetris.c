@@ -25,8 +25,7 @@ int kbhit(void);
 void current_block_delte();
 void draw_Borad(int, int);
 void block_extra();
-void extra_block_print();
-void new_block();
+int new_block();
 void key_left();
 void key_right();
 void key_down();
@@ -40,8 +39,11 @@ void quit();
 void keep_change();
 void change(int *a , int *b);
 void gameover();
+void extra_block_print(int y, int x, int type_extra);
+void extra_block_delete(int y, int x);
+void score_print();
 int mode = 0;
-int keep_block_type = -1;
+int keep_block_type = -1, score = 0;
 int type[3];
 int block_type, keep_count= 0;
 int block_xpos, block_ypos, block_rotate, crush_flag = 0, before_inactive_check = 0; //ingame blcok x_pos, y_pos, block_rorate, crush_flag
@@ -444,7 +446,6 @@ void a(){
 	int y_pos = 0;
 	int x_pos = 0;
 	int dir = 1;
-	
 		
 	clear();
 	cbreak();
@@ -468,11 +469,19 @@ void a(){
 		type[i] = rand()% 16777216;
 		type[i] %= 7;
 	}
-block_extra();
+	
+	block_extra();
 	while(1){
 		if(new_block_flag == 1){
+			extra_block_delete(9,WHITESPACE+40);
+			extra_block_delete(18,WHITESPACE+40);
+			extra_block_delete(13,2);
+			extra_block_print(9,WHITESPACE+40,type[1]);
+			extra_block_print(18,WHITESPACE+40,type[2]);
+			extra_block_print(13,2,keep_block_type);
+			score_print();
 			block_type = type[0];
-			if(new_block() == -1)
+			if(new_block() == -1)		
 				return;
 		}		
 		draw_Borad(y_pos, x_pos);
@@ -539,6 +548,7 @@ block_extra();
 			}
 			if(crush_check(block_xpos,block_ypos+1, block_rotate)==false&&(before_inactive_check == 3)){//check_inactive
 				block_inactive();
+				score += 10;
 				if(keep_count == 2){
 					keep_count = 1;
 				}
@@ -550,11 +560,12 @@ block_extra();
 		}
 		else{
 			if(crush_check(block_xpos, block_ypos+1,block_rotate) == true){
-						before_inactive_check = 0;
-						key_down();
+				before_inactive_check = 0;
+				key_down();
 			}
 			if(crush_check(block_xpos,block_ypos+1, block_rotate)==false&&(before_inactive_check == 3)){//check_inactive
 				block_inactive();
+				score+=10;
 				if(keep_count == 2){
 					keep_count = 1;
 				}
@@ -756,6 +767,7 @@ void delete_block(){
 		}
 		if(sum == 44)
 		{
+			score += 130;
 			for(int k = i; k>0;k--)
 			{
 				for(int s = 0; s< 16; s++)
@@ -763,6 +775,7 @@ void delete_block(){
 					Real_game_Board[k][s] = Real_game_Board[k-1][s];
 				}
 			}
+			i++;
 		}
 	}
 }
@@ -942,7 +955,7 @@ void block_extra()
 
 	mvprintw(17,WHITESPACE+40,"ㅡㅡㅡㅡ N E X T ㅡㅡㅡㅡ");
 	mvprintw(18,WHITESPACE+40,"ㅣ                     ㅣ");
-	mvprintw(18,WHITESPACE+40,"ㅣ                     ㅣ");	
+	mvprintw(19,WHITESPACE+40,"ㅣ                     ㅣ");	
 	mvprintw(20,WHITESPACE+40,"ㅣ                     ㅣ");
 	mvprintw(21,WHITESPACE+40,"ㅣ                     ㅣ");
 	mvprintw(22,WHITESPACE+40,"ㅣ                     ㅣ");
@@ -958,18 +971,45 @@ void block_extra()
 	refresh();
 }
 
-void extra_block_print()
+void extra_block_print(int y, int x, int type_extra)
 {
 	int i,j;
-
-	for(i=1; i<5; i++)
-	{
-		for(j=0; j<5;j++)
+	char fill[] = "@";
+	if(type_extra == -1)
+		return;
+	else{
+		for(i=0; i<5; i++)
 		{
-			if(Block[type[1][0][i][j]==2)
-			{
-				
+			for(j=0; j<5;j++)
+			{ 
+				move(y+i,x+10+j);
+				if(Block[type_extra][0][i][j]==2)
+				{
+					addstr(fill);
+				}
 			}
 		}
+		refresh();
 	}
+	
+}
+void extra_block_delete(int y, int x)
+{
+	int i,j;
+	char blank[] = " ";
+	for(i=0; i<5; i++)
+	{
+		for(j=0; j<20;j++)
+		{ 
+			move(y+i,x+2+j);
+			addstr(blank);
+		}
+	}
+	refresh();
+}
+void score_print(){
+	move(30,WHITESPACE+43);
+	printw("                            ");
+	move(30,WHITESPACE+43);
+	printw("My score : %10d",score);
 }
