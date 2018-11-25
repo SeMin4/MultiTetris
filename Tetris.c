@@ -3,6 +3,8 @@
 #include <ncursesw/curses.h>
 #include <stdlib.h>
 #include <unistd.h>
+#include <termios.h>
+#include <time.h>
 
 #define LEFTEDGE 20
 #define RIGHTEDGE 18
@@ -10,9 +12,11 @@
 #define SPACE 32
 
 void interface();
-void singlemode();
-void vsmode();
-void bye();
+void singlemode(int,int);
+void vsmode(int,int);
+void keyinformation();
+void help(int,int);
+void bye(int,int);
 void a();
 void b();
 void c();
@@ -26,6 +30,8 @@ void key_up();
 int crush_check(int, int, int);
 void block_inactive();
 void delete_block();
+void yesorno1();
+void yesorno2();
 
 int mode = 0;
 int block_xpos, block_ypos, block_rotate, crush_flag = 0, before_inactive_check = 0; //ingame blcok x_pos, y_pos, block_rorate, crush_flag
@@ -52,6 +58,9 @@ int Board[20][16] = {
 	{1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1},
 	{1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1}
 };
+
+
+
 int Real_game_Board[20][16];
 int Block[7][4][5][5] = {
 	{
@@ -266,37 +275,43 @@ int Block[7][4][5][5] = {
 	}//"ㅡ 블록"
 };
 
+
+
 int main(){
 
 	setlocale(LC_CTYPE, "ko_KR.utf-8");
+	srand( (unsigned)time(NULL) );
+	stdscr = initscr();
 
 	interface();
 	return 0;
 }
 void interface(){
 	int ch,count=1;
-	
-	initscr();
+	int y,x;	
+	getmaxyx(stdscr,y,x); 
+
+	clear();
+	noecho();
 	curs_set(0);
 	attron(A_BLINK);
 	keypad(stdscr,TRUE);
 	
 
-	clear();
+	//clear();
 	
-	mvprintw(3 ,10,"@@@@@@@@@@              @@@@@@@@@@              @@@@@@@@@@              @@@@@@@@@@              @@@@@@@@@@              @@@@@@@@@@");
-	mvprintw(4 ,10,"@@@@@@@@@@              @@@@@@@@@@              @@@@@@@@@@              @@@@@@@@@@              @@@@@@@@@@              @@@@@@@@@@");
-	mvprintw(5 ,10,"    @@                  @@                          @@                  @@      @@                  @@                  @@        ");
-	mvprintw(6 ,10,"    @@                  @@                          @@                  @@      @@                  @@                  @@        ");
-	mvprintw(7 ,10,"    @@                  @@@@@@@@@@                  @@                  @@@@@@@@@@                  @@                  @@@@@@@@@@");
-	mvprintw(8 ,10,"    @@                  @@@@@@@@@@                  @@                  @@@@@@@@@@                  @@                  @@@@@@@@@@");
-	mvprintw(9 ,10,"    @@                  @@                          @@                  @@  @@@                     @@                           @");
-	mvprintw(10,10,"    @@                  @@                          @@                  @@   @@@                    @@                           @");
-	mvprintw(11,10,"    @@                  @@@@@@@@@@                  @@                  @@    @@@               @@@@@@@@@@              @@@@@@@@@@");
-	mvprintw(12,10,"    @@                  @@@@@@@@@@                  @@                  @@     @@@              @@@@@@@@@@              @@@@@@@@@@");
+	mvprintw(y/6 ,x/6,    "@@@@@@@@@@              @@@@@@@@@@              @@@@@@@@@@              @@@@@@@@@@              @@@@@@@@@@              @@@@@@@@@@");
+	mvprintw((y/6)+1 ,x/6,"@@@@@@@@@@              @@@@@@@@@@              @@@@@@@@@@              @@@@@@@@@@              @@@@@@@@@@              @@@@@@@@@@");
+	mvprintw((y/6)+2 ,x/6,"    @@                  @@                          @@                  @@      @@                  @@                  @@        ");
+	mvprintw((y/6)+3 ,x/6,"    @@                  @@                          @@                  @@      @@                  @@                  @@        ");
+	mvprintw((y/6)+4 ,x/6,"    @@                  @@@@@@@@@@                  @@                  @@@@@@@@@@                  @@                  @@@@@@@@@@");
+	mvprintw((y/6)+5 ,x/6,"    @@                  @@@@@@@@@@                  @@                  @@@@@@@@@@                  @@                  @@@@@@@@@@");
+	mvprintw((y/6)+6 ,x/6,"    @@                  @@                          @@                  @@  @@@                     @@                           @");
+	mvprintw((y/6)+7,x/6, "    @@                  @@                          @@                  @@   @@@                    @@                           @");
+	mvprintw((y/6)+8,x/6, "    @@                  @@@@@@@@@@                  @@                  @@    @@@               @@@@@@@@@@              @@@@@@@@@@");
+	mvprintw((y/6)+9,x/6, "    @@                  @@@@@@@@@@                  @@                  @@     @@@              @@@@@@@@@@              @@@@@@@@@@");
 	refresh();
-	
-	singlemode();
+	singlemode(y,x);
 	
 	while(1)
 	{
@@ -304,95 +319,112 @@ void interface(){
 		ch = getch();
 		if(ch == 10)
 		{
-			switch(count)
-			{
-				case 1:
-					a();
-					mode = 1;
-					break;
-				case 2:
-					b();
-					mode = 1;
-					break;
-				case 3:
-					clear();
-					refresh();
-					endwin();
-					exit(0);
-					
-			}
+			break;
 		}
 		else if( ch == KEY_DOWN )
 		{
 			
 			count++;
-			if(count==4)
+			if(count==5)
 			{
 				count=1;
-				singlemode();
+				singlemode(y,x);
 			}
 			else if(count==2)
 			{
 				
-				vsmode();
+				vsmode(y,x);
 			}
-
 			else if(count==3)
 			{
+				help(y,x);
+			}
+			else if(count==4)
+			{
 				
-				bye();
+				bye(y,x);
 			}
 				
 			
 		}
 		else
 			continue;
-		if(mode!=0)
-		{
-
-			break;
-		}
+		
 	}
-	mvprintw(33,60,"test");
-	refresh();	
-	while(1);
-
-	//attroff(A_BLINK);
-	//endwin();	
+	switch(count)
+	{
+		case 1:
+			a();
+			break;
+		case 2:
+			b();
+			break;
+		case 3:
+			keyinformation();
+			break;
+		case 4:
+			clear();
+			refresh();
+			endwin();
+			exit(0);
+					
+	}
+	interface();
 
 }
-void singlemode(){
+void singlemode(int y, int x)
+{
 	standend();
-	mvprintw(24, 60,"*******************************");
+	mvprintw(y/2,(x/3)+17,     "*******************************");
 	standout();
-	mvprintw(25, 60,"            싱글 MODE          ");
+	mvprintw((y/2)+1, (x/3)+17,"            싱글 MODE          ");
 	standend();
-	mvprintw(26, 60,"            배틀 MODE          ");
-	mvprintw(27, 60,"              나가기           ");
-	mvprintw(28, 60,"*******************************");
+	mvprintw((y/2)+2, (x/3)+17,"            배틀 MODE          ");
+	mvprintw((y/2)+3, (x/3)+17,"             키 설명           ");
+	mvprintw((y/2)+4, (x/3)+17,"             나가기            ");
+	mvprintw((y/2)+5, (x/3)+17,"*******************************");
 	refresh();
 }
-void vsmode(){
+void vsmode(int y, int x)
+{
 	standend();
-	mvprintw(24, 60,"*******************************");
-	mvprintw(25, 60,"            싱글 MODE          ");
+	mvprintw(y/2, (x/3)+17,"*******************************");
+	mvprintw((y/2)+1, (x/3)+17,"            싱글 MODE          ");
 	standout();
-	mvprintw(26, 60,"            배틀 MODE          ");
+	mvprintw((y/2)+2, (x/3)+17,"            배틀 MODE          ");
 	standend();	
-	mvprintw(27, 60,"              나가기           ");
-	mvprintw(28, 60,"*******************************");
+	mvprintw((y/2)+3, (x/3)+17,"             키 설명           ");
+	mvprintw((y/2)+4, (x/3)+17,"             나가기            ");
+	mvprintw((y/2)+5, (x/3)+17,"*******************************");
+	refresh();
 	refresh();
 }
 
-void bye(){
+void help(int y, int x)
+{
 	standend();
-	mvprintw(24, 60,"*******************************");
-	mvprintw(25, 60,"            싱글 MODE          ");
-	mvprintw(26, 60,"            배틀 MODE          ");
+	mvprintw(y/2, (x/3)+17,"*******************************");
+	mvprintw((y/2)+1, (x/3)+17,"            싱글 MODE          ");
+	mvprintw((y/2)+2, (x/3)+17,"            배틀 MODE          ");
 	standout();	
-	mvprintw(27, 60,"              나가기           ");
+	mvprintw((y/2)+3, (x/3)+17,"             키 설명           ");
 	standend();
-	mvprintw(28, 60,"*******************************");
+	mvprintw((y/2)+4, (x/3)+17,"             나가기            ");
+	mvprintw((y/2)+5, (x/3)+170,"*******************************");
+	refresh();
+}
+
+void bye(int y, int x)
+{
+	standend();
+	mvprintw(y/2, (x/3)+17,"*******************************");
+	mvprintw((y/2)+1, (x/3)+17,"            싱글 MODE          ");
+	mvprintw((y/2)+2, (x/3)+17,"            배틀 MODE          ");	
+	mvprintw((y/2)+3, (x/3)+17,"             키 설명           ");
+	standout();
+	mvprintw((y/2)+4, (x/3)+17,"             나가기            ");
+	standend();
+	mvprintw((y/2)+5, (x/3)+17,"*******************************");
 	refresh();
 }
 
@@ -402,6 +434,9 @@ void a(){
 	int y_pos = 0;
 	int x_pos = 0;
 	int dir = 1;
+	
+	int type[3];	
+		
 	clear();
 	cbreak();
 	noecho();
@@ -492,7 +527,6 @@ void a(){
 			else if(crush_check(block_xpos,block_ypos+1, block_rotate)==false){
 				before_inactive_check++;
 			}
-
 			usleep(500000);
 		}
 		
@@ -659,13 +693,131 @@ void delete_block(){
 
 
 void b(){
+	int ch;
 	clear();
 	mvprintw(30,60," 안녕하세요 황보승우입니다.");
+	refresh();
+	while(1)
+	{
+		
+		noecho();
+		ch = getch();
+		if( (ch == 81) || (ch== 113) )
+		{
+			yesorno1();
+			while(1)
+			{
+				ch = getch();
+				if( ch == 10 )
+				{
+					break;
+				}
+				else if( ch == KEY_RIGHT )
+				{
+					yesorno2();
+					ch = getch();
+					if( ch == KEY_RIGHT)
+					{
+						yesorno1();
+						continue;
+					}
+					else if( ch == 10 )
+						continue;
+						
+				}
+			}
+		}
+		else
+			continue;
+		
+		break;
+	}
 //	mode=1;
 }
+void keyinformation()
+{
+	int ch;
+	clear();
+	
+	mvprintw(5,65, "******************************키설명****************************");
+	mvprintw(12, 84," ↑ : 회전 ");
+	mvprintw(16,84," ↓ : 한칸 내리기 ");
+	mvprintw(20,84," → :오른쪽으로 한칸 이동 ");
+	mvprintw(24,84," ← : 왼쪽으로 한칸 이동 ");
+	mvprintw(28,84," Space bar : 한번에 내리기 ");
+	mvprintw(32,84," Shift : Keep기능 ");
+	mvprintw(36,84," Backspace : 뒤로가기 ");	
+	mvprintw(43,65, "**************************************************************");
+	refresh();
+	
+	while(1)
+	{
+		
+		noecho();
+		ch = getch();
+		if( (ch == 81) || (ch== 113) )
+		{
+			yesorno1();
+			while(1)
+			{
+				ch = getch();
+				if( ch == 10 )
+				{
+					break;
+				}
+				else if( ch == KEY_RIGHT )
+				{
+					yesorno2();
+					ch = getch();
+					if( ch == KEY_RIGHT)
+					{
+						yesorno1();
+						continue;
+					}
+					else if( ch == 10 )
+						continue;
+						
+				}
+			}
+		}
+		else
+			continue;
+		
+		break;
+	}
+}
 
-void c(){
+void c()
+{
+	
 	endwin();
 //	mode=1;
 }
+
+void yesorno1()
+{
+	clear();
+	mvprintw(21,80,"***************************");
+	mvprintw(23,80,"   나 가 시 겠 습 니 까 ?    ");
+	standout();
+	mvprintw(24,87,"yes");
+	standend();
+	mvprintw(24,96,"no");
+	mvprintw(26,80,"***************************");
+
+}
+
+void yesorno2()
+{
+	clear();
+	mvprintw(21,80,"***************************");
+	mvprintw(23,80,"   나 가 시 겠 습 니 까 ?    ");
+	mvprintw(24,87,"yes");
+	standout();
+	mvprintw(24,96,"no");
+	standend();
+	mvprintw(26,80,"***************************");
+
+}
+
 
