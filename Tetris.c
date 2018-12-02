@@ -5,6 +5,7 @@
 #include <unistd.h>
 #include <termios.h>
 #include <time.h>
+#include "client.h"
 
 #define LEFTEDGE 20
 #define RIGHTEDGE 18
@@ -552,92 +553,92 @@ void single_play(){
 		type[i] = rand()% 16777216;
 		type[i] %= 7;
 	}
-	if(mode==0) // 싱글
-	{
-		block_extra();
-		while(1){
-			
-			if(new_block_flag == 1){
-				extra_block_delete(9,WHITESPACE+58);
-				extra_block_delete(18,WHITESPACE+58);
-				extra_block_delete(13,2);
-				extra_block_print(9,WHITESPACE+58,type[1]);
-				extra_block_print(18,WHITESPACE+58,type[2]);
-				extra_block_print(13,2,keep_block_type);
-				score_print();
-				block_type = type[0];
-				if(new_block() == -1)		
-					return;
-			}		
-			ghost_block();
-			draw_Borad(y_pos, x_pos);
-			//mmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmm
-			
-			if(kbhit()){
-				ch = getch();
-				switch(ch){//getch() 
-					case KEY_DOWN :
-						if(crush_check(block_xpos, block_ypos+1,block_rotate) == true){
-							before_inactive_check = 0;
-							key_down();
-						}									
-						break;
-					case KEY_UP :
-						if(crush_check(block_xpos, block_ypos,(block_rotate+1)%4) == true){
-							key_up();	
-						}				
-						break;
-					case KEY_RIGHT :
-						if(crush_check(block_xpos+1, block_ypos,block_rotate) == true){
-							key_right();
-						}
-						break;
-					case KEY_LEFT :
-						if(crush_check(block_xpos-1, block_ypos,block_rotate) == true){
-							key_left();
-						}
-						//draw_Borad(y_pos, x_pos);
-						break;
-					case SPACE :
-						while(crush_check(block_xpos, block_ypos+1,block_rotate) == true)
-						{
-							key_down();
-						}					
-						before_inactive_check = 3;
-						break;
-					case TAB:
-						for(int i=0; i<20; i++)
-							for(int j=0; j<12; j++)
-								if(Real_game_Board[i][j]==-1)
-									Real_game_Board[i][j]=0;
+	
+	block_extra();
+	while(1){
+		if(new_block_flag == 1){
+			extra_block_delete(9,WHITESPACE+40);
+			extra_block_delete(18,WHITESPACE+40);
+			extra_block_delete(13,2);
+			extra_block_print(9,WHITESPACE+40,type[1]);
+			extra_block_print(18,WHITESPACE+40,type[2]);
+			extra_block_print(13,2,keep_block_type);
+			score_print();
+			block_type = type[0];
 
-						if(keep_block_type == -1){
+			if(new_block() == -1)		
+				return;
+		}		
+		draw_Borad(y_pos, x_pos);
+		//mmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmm
+		
+		if(kbhit()){
+			ch = getch();
+			switch(ch){//getch() 
+				case KEY_DOWN :
+					if(crush_check(block_xpos, block_ypos+1,block_rotate) == true){
+						before_inactive_check = 0;
+						key_down();
+					}									
+					break;
+				case KEY_UP :
+					if(crush_check(block_xpos, block_ypos,(block_rotate+1)%4) == true){
+						key_up();	
+					}				
+					break;
+				case KEY_RIGHT :
+					if(crush_check(block_xpos+1, block_ypos,block_rotate) == true){
+						key_right();
+					}
+					break;
+				case KEY_LEFT :
+					if(crush_check(block_xpos-1, block_ypos,block_rotate) == true){
+						key_left();
+					}
+					//draw_Borad(y_pos, x_pos);
+					break;
+				case SPACE :
+					while(crush_check(block_xpos, block_ypos+1,block_rotate) == true){
+						key_down();
+					}
+					before_inactive_check = 3;
+					break;
+				
+					
+					
+				case TAB:
+					for(int i=0; i<20; i++)
+						for(int j=0; j<12; j++)
+							if(Real_game_Board[i][j]==-1)
+								Real_game_Board[i][j]=0;
+
+					if(keep_block_type == -1){
+						current_block_delte();
+						keep_change();
+						keep_count = 1;		
+					}	
+					else
+					{
+						if(keep_count == 2){
+
+						}
+						else if(keep_count == 1){
 							current_block_delte();
-							keep_change();
-							keep_count = 1;		
-						}	
-						else
-						{
-							if(keep_count == 2){
-
-							}
-							else if(keep_count == 1){
-								current_block_delte();
-								change(&keep_block_type,&type[0]);
-								new_block_flag = 1;
-								keep_count = 2;
-							}
-						} 
-						break;
-					case q:
-						quit();
-						return;
-					case Q:
-						quit();
-						return;
-						
-					default:
-						break;
+							change(&keep_block_type,&type[0]);
+							new_block_flag = 1;
+							keep_count = 2;
+						}
+					} 
+					break;
+				case q:
+					quit();
+					return;
+				case Q:
+					quit();
+					return;
+					
+				default:
+					break;
 				}
 				if(crush_check(block_xpos,block_ypos+1, block_rotate)==false&&(before_inactive_check == 3)){//check_inactive
 					block_inactive();
@@ -651,34 +652,31 @@ void single_play(){
 					before_inactive_check++;
 				}
 			}
-			else{
-				if(crush_check(block_xpos, block_ypos+1,block_rotate) == true){
-					before_inactive_check = 0;
-					key_down();
-				}
-				if(crush_check(block_xpos,block_ypos+1, block_rotate)==false&&(before_inactive_check == 3)){//check_inactive
-					block_inactive();
-					score+=10;
-					if(keep_count == 2){
-						keep_count = 1;
-					}
-					delete_block();				
-				}
-				else if(crush_check(block_xpos,block_ypos+1, block_rotate)==false){
-					before_inactive_check++;
-				}
-				usleep(500000);
+		else{
+			if(crush_check(block_xpos, block_ypos+1,block_rotate) == true){
+				before_inactive_check = 0;
+				key_down();
 			}
-			
+			if(crush_check(block_xpos,block_ypos+1, block_rotate)==false&&(before_inactive_check == 3)){//check_inactive
+				block_inactive();
+				score+=10;
+				if(keep_count == 2){
+					keep_count = 1;
+				}
+				delete_block();				
+			}
+			else if(crush_check(block_xpos,block_ypos+1, block_rotate)==false){
+				before_inactive_check++;
+			}
+			usleep(500000);
 		}
+			
 	}
-	else if( mode==1) // 멀티
-	{
-		
-	}
+}
+	
 
 	
-}
+
 void draw_Borad(int y_pos, int x_pos){
 	char wall[] = "■ ";	
 	char blank[] = "  ";
@@ -1285,8 +1283,4 @@ void ghost_block()
 			}
 		}
 	}
-	
-
-	
 }
-
