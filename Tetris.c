@@ -11,6 +11,9 @@
 #define ROW 20
 #define SPACE 32
 #define WHITESPACE 30
+#define TAB 9
+#define q 113
+#define Q 81
 
 void interface();
 void singlemode(int,int);
@@ -18,7 +21,7 @@ void vsmode(int,int);
 void keyinformation();
 void help(int,int);
 void bye(int,int);
-void a();
+void single_play();
 void b();
 void c();
 int kbhit(void);
@@ -42,38 +45,41 @@ void gameover();
 void extra_block_print(int y, int x, int type_extra);
 void extra_block_delete(int y, int x);
 void score_print();
+void ghost_block();
+
 int mode = 0;
 int keep_block_type = -1, score = 0;
 int type[3];
 int block_type, keep_count= 0;
 int block_xpos, block_ypos, block_rotate, crush_flag = 0, before_inactive_check = 0; //ingame blcok x_pos, y_pos, block_rorate, crush_flag
 int new_block_flag = 1;
-int Board[20][16] = {
-	{1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1},
-	{1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1},
-	{1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1},
-	{1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1},
-	{1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1},
-	{1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1},
-	{1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1},
-	{1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1},
-	{1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1},
-	{1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1},
-	{1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1},
-	{1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1},
-	{1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1},
-	{1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1},
-	{1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1},
-	{1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1},
-	{1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1},
-	{1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1},
-	{1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1},
-	{1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1}
+
+int Board[20][12] = {
+	{1,0,0,0,0,0,0,0,0,0,0,1},
+	{1,0,0,0,0,0,0,0,0,0,0,1},
+	{1,0,0,0,0,0,0,0,0,0,0,1},
+	{1,0,0,0,0,0,0,0,0,0,0,1},
+	{1,0,0,0,0,0,0,0,0,0,0,1},
+	{1,0,0,0,0,0,0,0,0,0,0,1},
+	{1,0,0,0,0,0,0,0,0,0,0,1},
+	{1,0,0,0,0,0,0,0,0,0,0,1},
+	{1,0,0,0,0,0,0,0,0,0,0,1},
+	{1,0,0,0,0,0,0,0,0,0,0,1},
+	{1,0,0,0,0,0,0,0,0,0,0,1},
+	{1,0,0,0,0,0,0,0,0,0,0,1},
+	{1,0,0,0,0,0,0,0,0,0,0,1},
+	{1,0,0,0,0,0,0,0,0,0,0,1},
+	{1,0,0,0,0,0,0,0,0,0,0,1},
+	{1,0,0,0,0,0,0,0,0,0,0,1},
+	{1,0,0,0,0,0,0,0,0,0,0,1},
+	{1,0,0,0,0,0,0,0,0,0,0,1},
+	{1,0,0,0,0,0,0,0,0,0,0,1},
+	{1,1,1,1,1,1,1,1,1,1,1,1}
 };
 
 
-
-int Real_game_Board[20][16];
+int Real_game_Board[20][12];
+int Shadow_game_Board[20][12];
 int Block[7][4][5][5] = {
 	{
 		{
@@ -85,9 +91,9 @@ int Block[7][4][5][5] = {
 		},//"ㄴ블록"
 		{
 			{0,0,0,0,0},
-			{0,0,0,2,0},
-			{0,0,0,2,0},
-			{0,0,2,2,0},
+			{0,2,2,0,0},
+			{0,2,0,0,0},
+			{0,2,0,0,0},
 			{0,0,0,0,0}
 		},//"회전"
 		{
@@ -99,9 +105,9 @@ int Block[7][4][5][5] = {
 		},//"회전"
 		{
 			{0,0,0,0,0},
-			{0,2,2,0,0},
-			{0,2,0,0,0},
-			{0,2,0,0,0},
+			{0,0,0,2,0},
+			{0,0,0,2,0},
+			{0,0,2,2,0},
 			{0,0,0,0,0}
 		}//"회전"
 	},//"ㄴ 블록"
@@ -115,9 +121,9 @@ int Block[7][4][5][5] = {
 		},
 		{
 			{0,0,0,0,0},
-			{0,0,2,2,0},
-			{0,0,0,2,0},
-			{0,0,0,2,0},
+			{0,2,0,0,0},
+			{0,2,0,0,0},
+			{0,2,2,0,0},
 			{0,0,0,0,0}
 		},
 		{
@@ -129,9 +135,9 @@ int Block[7][4][5][5] = {
 		},
 		{
 			{0,0,0,0,0},
-			{0,2,0,0,0},
-			{0,2,0,0,0},
-			{0,2,2,0,0},
+			{0,0,2,2,0},
+			{0,0,0,2,0},
+			{0,0,0,2,0},
 			{0,0,0,0,0}
 		}
 	},//"j 블록"
@@ -175,9 +181,9 @@ int Block[7][4][5][5] = {
 		},
 		{
 			{0,0,0,0,0},
-			{0,0,0,2,0},
-			{0,0,2,2,0},
-			{0,0,0,2,0},
+			{0,2,0,0,0},
+			{0,2,2,0,0},
+			{0,2,0,0,0},
 			{0,0,0,0,0}
 		},
 		{
@@ -189,9 +195,9 @@ int Block[7][4][5][5] = {
 		},
 		{
 			{0,0,0,0,0},
-			{0,2,0,0,0},
-			{0,2,2,0,0},
-			{0,2,0,0,0},
+			{0,0,0,2,0},
+			{0,0,2,2,0},
+			{0,0,0,2,0},
 			{0,0,0,0,0}
 		}
 	},//"t블록"
@@ -212,9 +218,9 @@ int Block[7][4][5][5] = {
 		},
 		{
 			{0,0,0,0,0},
+			{0,0,0,0,0},
 			{0,2,2,0,0},
 			{0,0,2,2,0},
-			{0,0,0,0,0},
 			{0,0,0,0,0}
 		},
 		{
@@ -235,23 +241,23 @@ int Block[7][4][5][5] = {
 		},
 		{
 			{0,0,0,0,0},
+			{0,2,0,0,0},
+			{0,2,2,0,0},
 			{0,0,2,0,0},
-			{0,0,2,2,0},
-			{0,0,0,2,0},
 			{0,0,0,0,0}
 		},
 		{
+			{0,0,0,0,0},
 			{0,0,0,0,0},
 			{0,0,2,2,0},
 			{0,2,2,0,0},
-			{0,0,0,0,0},
 			{0,0,0,0,0}
 		},
 		{
 			{0,0,0,0,0},
+			{0,2,0,0,0},
+			{0,2,2,0,0},
 			{0,0,2,0,0},
-			{0,0,2,2,0},
-			{0,0,0,2,0},
 			{0,0,0,0,0}
 		}
 	},//"reverse ㄹ블록"
@@ -287,7 +293,19 @@ int Block[7][4][5][5] = {
 	}//"ㅡ 블록"
 };
 
-
+int title[10][60]=
+	{
+		{1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1},
+		{1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1},
+		{0,0,0,0,1,1,0,0,0,0,1,1,0,0,0,0,0,0,0,0,0,0,0,0,1,1,0,0,0,0,1,1,0,0,0,0,0,0,1,1,0,0,0,0,1,1,0,0,0,0,1,1,0,0,0,0,0,0,0,0},
+		{0,0,0,0,1,1,0,0,0,0,1,1,0,0,0,0,0,0,0,0,0,0,0,0,1,1,0,0,0,0,1,1,0,0,0,0,0,0,1,1,0,0,0,0,1,1,0,0,0,0,1,1,0,0,0,0,0,0,0,0},
+		{0,0,0,0,1,1,0,0,0,0,1,1,1,1,1,1,1,1,1,1,0,0,0,0,1,1,0,0,0,0,1,1,1,1,1,1,1,1,1,1,0,0,0,0,1,1,0,0,0,0,1,1,1,1,1,1,1,1,1,1},
+		{0,0,0,0,1,1,0,0,0,0,1,1,1,1,1,1,1,1,1,1,0,0,0,0,1,1,0,0,0,0,1,1,0,0,1,1,0,0,0,0,0,0,0,0,1,1,0,0,0,0,1,1,1,1,1,1,1,1,1,1},
+		{0,0,0,0,1,1,0,0,0,0,1,1,0,0,0,0,0,0,0,0,0,0,0,0,1,1,0,0,0,0,1,1,0,0,0,1,1,0,0,0,0,0,0,0,1,1,0,0,0,0,0,0,0,0,0,0,0,0,1,1},
+		{0,0,0,0,1,1,0,0,0,0,1,1,0,0,0,0,0,0,0,0,0,0,0,0,1,1,0,0,0,0,1,1,0,0,0,0,1,1,0,0,0,0,0,0,1,1,0,0,0,0,0,0,0,0,0,0,0,0,1,1},
+		{0,0,0,0,1,1,0,0,0,0,1,1,1,1,1,1,1,1,1,1,0,0,0,0,1,1,0,0,0,0,1,1,0,0,0,0,0,1,1,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1},
+		{0,0,0,0,1,1,0,0,0,0,1,1,1,1,1,1,1,1,1,1,0,0,0,0,1,1,0,0,0,0,1,1,0,0,0,0,0,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1}
+	};
 
 int main(){
 
@@ -299,30 +317,81 @@ int main(){
 	return 0;
 }
 void interface(){
-	int ch,count=1;
-	int y,x;	
-	getmaxyx(stdscr,y,x); 
+	
 
-	clear();
+	int ch,color=0;
+	int y,x,i,j;	
+	int count=1;
+	getmaxyx(stdscr,y,x); 
+	keypad(stdscr,TRUE);
 	noecho();
 	curs_set(0);
-	attron(A_BLINK);
-	keypad(stdscr,TRUE);
-	
 
-	//clear();
+	if(has_colors() == FALSE)
+	{
+		endwin();
+		printf("Your terminal does not support color\n");
+		exit(1);
+	}
+	clear();
+	start_color();
+
+	init_pair(1,COLOR_BLACK,COLOR_BLACK);
+	init_pair(2,COLOR_RED,COLOR_RED);
+	init_pair(3,COLOR_GREEN,COLOR_GREEN);
+	init_pair(4,COLOR_YELLOW,COLOR_YELLOW);
+	init_pair(5,COLOR_BLUE,COLOR_BLUE);
+	init_pair(6,COLOR_MAGENTA,COLOR_MAGENTA);
+	init_pair(7,COLOR_CYAN,COLOR_CYAN);
+	init_pair(8,COLOR_WHITE,COLOR_WHITE);
 	
-	mvprintw(y/6 ,x/6,    "@@@@@@@@@@              @@@@@@@@@@              @@@@@@@@@@              @@@@@@@@@@              @@@@@@@@@@              @@@@@@@@@@");
-	mvprintw((y/6)+1 ,x/6,"@@@@@@@@@@              @@@@@@@@@@              @@@@@@@@@@              @@@@@@@@@@              @@@@@@@@@@              @@@@@@@@@@");
-	mvprintw((y/6)+2 ,x/6,"    @@                  @@                          @@                  @@      @@                  @@                  @@        ");
-	mvprintw((y/6)+3 ,x/6,"    @@                  @@                          @@                  @@      @@                  @@                  @@        ");
-	mvprintw((y/6)+4 ,x/6,"    @@                  @@@@@@@@@@                  @@                  @@@@@@@@@@                  @@                  @@@@@@@@@@");
-	mvprintw((y/6)+5 ,x/6,"    @@                  @@@@@@@@@@                  @@                  @@@@@@@@@@                  @@                  @@@@@@@@@@");
-	mvprintw((y/6)+6 ,x/6,"    @@                  @@                          @@                  @@  @@@                     @@                           @");
-	mvprintw((y/6)+7,x/6, "    @@                  @@                          @@                  @@   @@@                    @@                           @");
-	mvprintw((y/6)+8,x/6, "    @@                  @@@@@@@@@@                  @@                  @@    @@@               @@@@@@@@@@              @@@@@@@@@@");
-	mvprintw((y/6)+9,x/6, "    @@                  @@@@@@@@@@                  @@                  @@     @@@              @@@@@@@@@@              @@@@@@@@@@");
-	refresh();
+	for(i=0; i<10; i++)
+	{
+		move((y/6)+i,(x/6)+5);
+		for(j=0; j<60; j++)
+		{
+			if(title[i][j]==1)
+			{
+				switch(color)
+				{
+					case 0:
+						attron(COLOR_PAIR(2));
+						break;
+					case 1:
+						attron(COLOR_PAIR(4));
+						break;
+					case 2:
+						attron(COLOR_PAIR(7));
+						break;
+					case 3:
+						attron(COLOR_PAIR(3));
+						break;
+					case 4:
+						attron(COLOR_PAIR(5));
+						break;
+					case 5:
+						attron(COLOR_PAIR(6));
+						break;
+				}
+			}
+			else
+				attron(COLOR_PAIR(1));
+			
+			if(j%10==9)
+			{
+				color++;
+				if(color==6)
+					color=0;
+			}
+			addch(title[i][j]);
+			
+		}
+	}
+	
+	//refresh();
+	
+	refresh();	
+	
 	singlemode(y,x);
 	
 	while(1)
@@ -337,7 +406,7 @@ void interface(){
 		{
 			
 			count++;
-			if(count==5)
+			if(count==5 || count==1)
 			{
 				count=1;
 				singlemode(y,x);
@@ -366,9 +435,27 @@ void interface(){
 	switch(count)
 	{
 		case 1:
-			a();
+			mode=0;
+			for(int i=0; i<20; i++)
+			{
+				for(int j=0; j<12; j++)
+				{
+					if(i==19 || j==0 || j==11)
+						Real_game_Board[i][j]=1;
+					else
+						Real_game_Board[i][j]=0;
+				}
+			}
+			for(int i=0; i<20; i++)
+				for(int j=0; j<12; j++)
+					Board[i][j]=100;
+			score=0;
+			keep_block_type=-1;
+			new_block_flag=1;
+			single_play();
 			break;
 		case 2:
+			mode=1;
 			b();
 			break;
 		case 3:
@@ -440,7 +527,7 @@ void bye(int y, int x)
 	refresh();
 }
 
-void a(){
+void single_play(){
 	char tetris[]  = "TETIRS";
 	int i, j, ch;
 	int y_pos = 0;
@@ -458,152 +545,219 @@ void a(){
 	addstr(tetris);
 	refresh();
 	y_pos += 2;
-	for(int i = 0; i<20; i++)
-		for(int j = 0; j<16; j++)
-			Real_game_Board[i][j] = Board[i][j];
-	for(int i = 0 ; i< 20; i++)
-		for(int j = 0; j<16;j++)
-			Board[i][j] = 100;
+	
+	
 	srand((unsigned)time(NULL));
 	for(int i = 0; i<3; i++){
 		type[i] = rand()% 16777216;
 		type[i] %= 7;
 	}
-	
-	block_extra();
-	while(1){
-		if(new_block_flag == 1){
-			extra_block_delete(9,WHITESPACE+40);
-			extra_block_delete(18,WHITESPACE+40);
-			extra_block_delete(13,2);
-			extra_block_print(9,WHITESPACE+40,type[1]);
-			extra_block_print(18,WHITESPACE+40,type[2]);
-			extra_block_print(13,2,keep_block_type);
-			score_print();
-			block_type = type[0];
-			if(new_block() == -1)		
-				return;
-		}		
-		draw_Borad(y_pos, x_pos);
-		//mmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmm
-		
-		if(kbhit()){
-			ch = getch();
-			switch(ch){//getch() 
-				case KEY_DOWN :
-					if(crush_check(block_xpos, block_ypos+1,block_rotate) == true){
-						before_inactive_check = 0;
-						key_down();
-					}									
-					break;
-				case KEY_UP :
-					if(crush_check(block_xpos, block_ypos,(block_rotate+1)%4) == true){
-						key_up();	
-					}				
-					break;
-				case KEY_RIGHT :
-					if(crush_check(block_xpos+1, block_ypos,block_rotate) == true){
-						key_right();
-					}
-					break;
-				case KEY_LEFT :
-					if(crush_check(block_xpos-1, block_ypos,block_rotate) == true){
-						key_left();
-					}
-					//draw_Borad(y_pos, x_pos);
-					break;
-				case SPACE :
-					while(crush_check(block_xpos, block_ypos+1,block_rotate) == true){
-						key_down();
-					}
-					before_inactive_check = 3;
-					break;
-				case 9:
-					if(keep_block_type == -1){
-						current_block_delte();
-						keep_change();
-						keep_count = 1;		
-					}	
-					else
-					{
-						if(keep_count == 2){
+	if(mode==0) // 싱글
+	{
+		block_extra();
+		while(1){
+			
+			if(new_block_flag == 1){
+				extra_block_delete(9,WHITESPACE+58);
+				extra_block_delete(18,WHITESPACE+58);
+				extra_block_delete(13,2);
+				extra_block_print(9,WHITESPACE+58,type[1]);
+				extra_block_print(18,WHITESPACE+58,type[2]);
+				extra_block_print(13,2,keep_block_type);
+				score_print();
+				block_type = type[0];
+				if(new_block() == -1)		
+					return;
+			}		
+			ghost_block();
+			draw_Borad(y_pos, x_pos);
+			//mmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmm
+			
+			if(kbhit()){
+				ch = getch();
+				switch(ch){//getch() 
+					case KEY_DOWN :
+						if(crush_check(block_xpos, block_ypos+1,block_rotate) == true){
+							before_inactive_check = 0;
+							key_down();
+						}									
+						break;
+					case KEY_UP :
+						if(crush_check(block_xpos, block_ypos,(block_rotate+1)%4) == true){
+							key_up();	
+						}				
+						break;
+					case KEY_RIGHT :
+						if(crush_check(block_xpos+1, block_ypos,block_rotate) == true){
+							key_right();
+						}
+						break;
+					case KEY_LEFT :
+						if(crush_check(block_xpos-1, block_ypos,block_rotate) == true){
+							key_left();
+						}
+						//draw_Borad(y_pos, x_pos);
+						break;
+					case SPACE :
+						while(crush_check(block_xpos, block_ypos+1,block_rotate) == true)
+						{
+							key_down();
+						}					
+						before_inactive_check = 3;
+						break;
+					case TAB:
+						for(int i=0; i<20; i++)
+							for(int j=0; j<12; j++)
+								if(Real_game_Board[i][j]==-1)
+									Real_game_Board[i][j]=0;
 
-						}
-						else if(keep_count == 1){
+						if(keep_block_type == -1){
 							current_block_delte();
-							change(&keep_block_type,&type[0]);
-							new_block_flag = 1;
-							keep_count = 2;
-						}
-					} 
-					break;
-				case 81:
-					quit();
-					return;
-				case 113:
-					quit();
-					return;
-				default:
-					break;
-			}
-			if(crush_check(block_xpos,block_ypos+1, block_rotate)==false&&(before_inactive_check == 3)){//check_inactive
-				block_inactive();
-				score += 10;
-				if(keep_count == 2){
-					keep_count = 1;
+							keep_change();
+							keep_count = 1;		
+						}	
+						else
+						{
+							if(keep_count == 2){
+
+							}
+							else if(keep_count == 1){
+								current_block_delte();
+								change(&keep_block_type,&type[0]);
+								new_block_flag = 1;
+								keep_count = 2;
+							}
+						} 
+						break;
+					case q:
+						quit();
+						return;
+					case Q:
+						quit();
+						return;
+						
+					default:
+						break;
 				}
-				delete_block();				
-			}
-			else if(crush_check(block_xpos,block_ypos+1, block_rotate)==false){
-				before_inactive_check++;
-			}
-		}
-		else{
-			if(crush_check(block_xpos, block_ypos+1,block_rotate) == true){
-				before_inactive_check = 0;
-				key_down();
-			}
-			if(crush_check(block_xpos,block_ypos+1, block_rotate)==false&&(before_inactive_check == 3)){//check_inactive
-				block_inactive();
-				score+=10;
-				if(keep_count == 2){
-					keep_count = 1;
+				if(crush_check(block_xpos,block_ypos+1, block_rotate)==false&&(before_inactive_check == 3)){//check_inactive
+					block_inactive();
+					score += 10;
+					if(keep_count == 2){
+						keep_count = 1;
+					}
+					delete_block();				
 				}
-				delete_block();				
+				else if(crush_check(block_xpos,block_ypos+1, block_rotate)==false){
+					before_inactive_check++;
+				}
 			}
-			else if(crush_check(block_xpos,block_ypos+1, block_rotate)==false){
-				before_inactive_check++;
+			else{
+				if(crush_check(block_xpos, block_ypos+1,block_rotate) == true){
+					before_inactive_check = 0;
+					key_down();
+				}
+				if(crush_check(block_xpos,block_ypos+1, block_rotate)==false&&(before_inactive_check == 3)){//check_inactive
+					block_inactive();
+					score+=10;
+					if(keep_count == 2){
+						keep_count = 1;
+					}
+					delete_block();				
+				}
+				else if(crush_check(block_xpos,block_ypos+1, block_rotate)==false){
+					before_inactive_check++;
+				}
+				usleep(500000);
 			}
-			usleep(500000);
+			
 		}
+	}
+	else if( mode==1) // 멀티
+	{
 		
 	}
+
+	
 }
 void draw_Borad(int y_pos, int x_pos){
-	char wall[] = "@";	
-	char blank[] = " ";
-	char fill[] = "*";
+	char wall[] = "■ ";	
+	char blank[] = "  ";
+	char fill[] = "□ ";
+	char shadow[] = "▧ ";
+
+	init_pair(1,COLOR_BLACK,COLOR_BLACK);
+	init_pair(2,COLOR_RED,COLOR_RED);
+	init_pair(3,COLOR_GREEN,COLOR_GREEN);
+	init_pair(4,COLOR_YELLOW,COLOR_YELLOW);
+	init_pair(5,COLOR_BLUE,COLOR_BLUE);
+	init_pair(6,COLOR_MAGENTA,COLOR_MAGENTA);
+	init_pair(7,COLOR_CYAN,COLOR_CYAN);
+	init_pair(8,COLOR_WHITE,COLOR_WHITE);
+	init_color(77,372,843,372);
+	init_pair(11,COLOR_WHITE,COLOR_BLACK);
+
+	
 	for(int i = 0; i<40;i++){
-		for(int j = 0; j<32; j++){
-			if(Board[i/2][j/2]!=Real_game_Board[i/2][j/2]){
-				move(y_pos + i, WHITESPACE+x_pos+j);
+		for(int j = 0; j<24; j++){
+			if(Board[i/2][j/2]!=Real_game_Board[i/2][j/2])
+			{
+				move(y_pos + i, WHITESPACE+x_pos+(2*j));
 				if(Real_game_Board[i/2][j/2] == 0)
+				{
+					attron(COLOR_PAIR(1));
 					addstr(blank);
-				else if(Real_game_Board[i/2][j/2] == 1){
+				}
+					
+				else if(Real_game_Board[i/2][j/2] == 1)
+				{
+					attron(COLOR_PAIR(77));
 					addstr(wall);
 				}
-				else if(Real_game_Board[i/2][j/2] == 2){
+				else if(Real_game_Board[i/2][j/2] == 2)
+				{
+					switch(block_type)
+					{
+						case 0:
+							attron(COLOR_PAIR(2));
+							break;
+						case 1:
+							attron(COLOR_PAIR(3));
+							break;							
+						case 2:
+							attron(COLOR_PAIR(4));
+							break;
+						case 3:
+							attron(COLOR_PAIR(5));
+							break;
+						case 4:
+							attron(COLOR_PAIR(6));
+							break;
+						case 5:
+							attron(COLOR_PAIR(7));
+							break;
+						case 6:
+							attron(COLOR_PAIR(8));
+							break;
+					}
 					addstr(fill);
 				}
-				else if(Real_game_Board[i/2][j/2] == 3){
+				else if(Real_game_Board[i/2][j/2] == 3)
+				{
+					attroff(COLOR_PAIR(8));
 					addstr(fill);
+				}
+				else if(Real_game_Board[i/2][j/2] == -1 )
+				{
+					
+					attron(COLOR_PAIR(11));
+					addstr(shadow);
 				}
 				refresh();
 			}		
 		}
 	}
 	for(int i = 0 ; i<20; i++)
-		for(int j = 0; j<16; j++)
+		for(int j = 0; j<12; j++)
 			Board[i][j] = Real_game_Board[i][j]; 
 	
 	
@@ -641,21 +795,25 @@ void change(int *a, int *b){
 	*b = temp;
 }
 int new_block(){
-	block_xpos = 5;
+	block_xpos = 4;
 	block_ypos = 0;	
 	block_rotate = 0;
+	
+
 	for(int i = 0; i<5; i++){			
 		for(int j = 0; j<5; j++){
-				if(Block [block_type][block_rotate][i][j] == 2){
+				if(Block [block_type][block_rotate][i][j] == 2)
+				{
 					if(Real_game_Board[block_ypos+i][block_xpos+j] == 3){
 						gameover();
 						return -1;
 					}
 					else{
-						Real_game_Board[block_ypos+i][block_xpos+j] = 2;	
+						Real_game_Board[block_ypos+i][block_xpos+j] = 2;
 					}
-						
+					
 				}
+				
 					
 		}		
 	}
@@ -666,6 +824,16 @@ int new_block(){
 	
 }
 void key_left(){
+	for(int i=0; i<20; i++)
+	{
+		for(int j=0; j<12; j++)
+		{
+			if(Real_game_Board[i][j]==-1)
+			{
+				Real_game_Board[i][j]=0;
+			}
+		}
+	}
 	for(int i = 0; i< 5; i++){
 		for(int j = 0; j< 5; j++){
 			if(Block[block_type][block_rotate][i][j] == 2){
@@ -683,6 +851,16 @@ void key_left(){
 	}
 }
 void key_right(){
+	for(int i=0; i<20; i++)
+	{
+		for(int j=0; j<12; j++)
+		{
+			if(Real_game_Board[i][j]==-1)
+			{
+				Real_game_Board[i][j]=0;
+			}
+		}
+	}
 	for(int i = 0; i< 5; i++){
 		for(int j = 0; j< 5; j++){
 			if(Block[block_type][block_rotate][i][j] == 2){
@@ -700,6 +878,16 @@ void key_right(){
 	}
 }
 void key_down(){
+	for(int i=0; i<20; i++)
+	{
+		for(int j=0; j<12; j++)
+		{
+			if(Real_game_Board[i][j]==-1)
+			{
+				Real_game_Board[i][j]=0;
+			}
+		}
+	}
 	for(int i = 0; i< 5; i++){
 		for(int j = 0; j< 5; j++){
 			if(Block[block_type][block_rotate][i][j] == 2){
@@ -717,6 +905,16 @@ void key_down(){
 	}
 }
 void key_up(){
+	for(int i=0; i<20; i++)
+	{
+		for(int j=0; j<12; j++)
+		{
+			if(Real_game_Board[i][j]==-1)
+			{
+				Real_game_Board[i][j]=0;
+			}
+		}
+	}
 	for(int i = 0; i< 5; i++){
 		for(int j = 0; j< 5; j++){
 			if(Block[block_type][block_rotate][i][j] == 2){
@@ -762,15 +960,15 @@ void delete_block(){
 	int sum = 0;
 	for(int i = 19; i>=0; i--){
 		sum = 0;
-		for(int j = 0; j<16; j++){
+		for(int j = 0; j<12; j++){
 			sum += Real_game_Board[i][j];
 		}
-		if(sum == 44)
+		if(sum ==32)
 		{
 			score += 130;
 			for(int k = i; k>0;k--)
 			{
-				for(int s = 0; s< 16; s++)
+				for(int s = 0; s< 12; s++)
 				{
 					Real_game_Board[k][s] = Real_game_Board[k-1][s];
 				}
@@ -885,29 +1083,38 @@ void keyinformation()
 void quit()
 {
 	int ch;
+	int a=1;
 	yesorno1();
+	
 	while(1)
 	{
+		
 		ch = getch();
 		if( ch == 10 )
 		{
-			break;
+			if( a==1 )
+			{
+				
+				break;
+				
+			}
+			
 		}
 		else if( ch == KEY_RIGHT )
-		{
-			yesorno2();
-			ch = getch();
-			if( ch == KEY_RIGHT)
+		{	
+			if(a==1)
 			{
-				yesorno1();
-				continue;
+				a=2;
+				yesorno2();
 			}
-			else if( ch == 10 )
-				continue;
-				
+			else if(a==2)
+			{
+				a=1;
+				yesorno1();
+			}
 		}
 	}
-		
+	
 	
 }
 void c()
@@ -919,7 +1126,10 @@ void c()
 
 void yesorno1()
 {
+	
 	clear();
+	init_pair(10,COLOR_WHITE,COLOR_BLACK);
+	attron(COLOR_PAIR(10));
 	mvprintw(21,80,"***************************");
 	mvprintw(23,80,"   나 가 시 겠 습 니 까 ?    ");
 	standout();
@@ -933,6 +1143,8 @@ void yesorno1()
 void yesorno2()
 {
 	clear();
+	init_pair(10,COLOR_WHITE,COLOR_BLACK);
+	attron(COLOR_PAIR(10));
 	mvprintw(21,80,"***************************");
 	mvprintw(23,80,"   나 가 시 겠 습 니 까 ?    ");
 	mvprintw(24,87,"yes");
@@ -945,21 +1157,23 @@ void yesorno2()
 
 void block_extra()
 {
-	mvprintw(8, WHITESPACE+40,"ㅡㅡㅡㅡ N E X T ㅡㅡㅡㅡ");
-	mvprintw(9, WHITESPACE+40,"ㅣ                     ㅣ");
-	mvprintw(10,WHITESPACE+40,"ㅣ                     ㅣ");	
-	mvprintw(11,WHITESPACE+40,"ㅣ                     ㅣ");
-	mvprintw(12,WHITESPACE+40,"ㅣ                     ㅣ");
-	mvprintw(13,WHITESPACE+40,"ㅣ                     ㅣ");
-	mvprintw(14,WHITESPACE+40,"ㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡ");
+	
+	mvprintw(8, WHITESPACE+58,"ㅡㅡㅡㅡ N E X T ㅡㅡㅡㅡ");
+	mvprintw(9, WHITESPACE+58,"ㅣ                     ㅣ");
+	mvprintw(10,WHITESPACE+58,"ㅣ                     ㅣ");	
+	mvprintw(11,WHITESPACE+58,"ㅣ                     ㅣ");
+	mvprintw(12,WHITESPACE+58,"ㅣ                     ㅣ");
+	mvprintw(13,WHITESPACE+58,"ㅣ                     ㅣ");
+	mvprintw(14,WHITESPACE+58,"ㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡ");
+	//mvprintw(15,WHITESPACE+40,"■ ■ ■ ■ ■ ■ ■ ■ ■ ■ ");
 
-	mvprintw(17,WHITESPACE+40,"ㅡㅡㅡㅡ N E X T ㅡㅡㅡㅡ");
-	mvprintw(18,WHITESPACE+40,"ㅣ                     ㅣ");
-	mvprintw(19,WHITESPACE+40,"ㅣ                     ㅣ");	
-	mvprintw(20,WHITESPACE+40,"ㅣ                     ㅣ");
-	mvprintw(21,WHITESPACE+40,"ㅣ                     ㅣ");
-	mvprintw(22,WHITESPACE+40,"ㅣ                     ㅣ");
-	mvprintw(23,WHITESPACE+40,"ㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡ");
+	mvprintw(17,WHITESPACE+58,"ㅡㅡㅡㅡ N E X T ㅡㅡㅡㅡ");
+	mvprintw(18,WHITESPACE+58,"ㅣ                     ㅣ");
+	mvprintw(19,WHITESPACE+58,"ㅣ                     ㅣ");	
+	mvprintw(20,WHITESPACE+58,"ㅣ                     ㅣ");
+	mvprintw(21,WHITESPACE+58,"ㅣ                     ㅣ");
+	mvprintw(22,WHITESPACE+58,"ㅣ                     ㅣ");
+	mvprintw(23,WHITESPACE+58,"ㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡ");
 
 	mvprintw(12,2,"ㅡㅡㅡㅡ K E E P ㅡㅡㅡㅡ");
 	mvprintw(13,2,"ㅣ                     ㅣ");
@@ -973,8 +1187,10 @@ void block_extra()
 
 void extra_block_print(int y, int x, int type_extra)
 {
+	init_pair(1,COLOR_BLACK,COLOR_BLACK);
+	init_pair(8,COLOR_WHITE,COLOR_WHITE);
 	int i,j;
-	char fill[] = "@";
+	char fill[] = "■ ";
 	if(type_extra == -1)
 		return;
 	else{
@@ -982,11 +1198,14 @@ void extra_block_print(int y, int x, int type_extra)
 		{
 			for(j=0; j<5;j++)
 			{ 
-				move(y+i,x+10+j);
+				move(y+i,x+7+(2*j));
 				if(Block[type_extra][0][i][j]==2)
 				{
+					attron(COLOR_PAIR(8));
 					addstr(fill);
 				}
+				//else
+				//	attron(COLOR_PAIR(1));
 			}
 		}
 		refresh();
@@ -995,21 +1214,79 @@ void extra_block_print(int y, int x, int type_extra)
 }
 void extra_block_delete(int y, int x)
 {
+	init_pair(1,COLOR_BLACK,COLOR_BLACK);
+
+	
 	int i,j;
-	char blank[] = " ";
+	char blank[] = "  ";
 	for(i=0; i<5; i++)
 	{
-		for(j=0; j<20;j++)
+		for(j=0; j<10;j++)
 		{ 
-			move(y+i,x+2+j);
-			addstr(blank);
+			move(y+i,x+2+(2*j));
+			attron(COLOR_PAIR(1));
+			addstr(blank);			
 		}
 	}
 	refresh();
 }
 void score_print(){
-	move(30,WHITESPACE+43);
+	init_pair(10,COLOR_WHITE,COLOR_BLACK);
+	attroff(COLOR_PAIR(10));
+	move(30,WHITESPACE+58);
 	printw("                            ");
-	move(30,WHITESPACE+43);
+	move(30,WHITESPACE+58);
 	printw("My score : %10d",score);
 }
+
+void ghost_block()
+{
+	int ypos=block_ypos;
+	int i,j;
+	
+	
+
+	while(crush_check(block_xpos,ypos+1,block_rotate) == true)
+	{
+		for(int i = 0; i< 5; i++)
+		{
+			for(int j = 0; j< 5; j++)
+			{
+				if(Block[block_type][block_rotate][i][j] == 2)
+				{
+					Real_game_Board[block_ypos+i][block_xpos+j] = 0;
+				}
+			}
+		}
+		ypos++;
+		for(int i = 0; i< 5; i++)
+		{
+			for(int j = 0; j< 5; j++)
+			{
+				if(Block[block_type][block_rotate][i][j] == 2)
+				{
+					Real_game_Board[block_ypos+i][block_xpos+j] = 2;
+				}
+			}
+		}
+		
+	}
+
+	for(int i = 0; i< 5; i++)
+	{
+		for(int j = 0; j< 5; j++)
+		{
+			if(Block[block_type][block_rotate][i][j] == 2)
+			{
+				if(Real_game_Board[ypos+i][block_xpos+j]==2)
+					continue;
+				else
+					Real_game_Board[ypos+i][block_xpos+j] = -1;
+			}
+		}
+	}
+	
+
+	
+}
+
