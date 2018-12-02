@@ -7,11 +7,12 @@
 #include<sys/time.h>
 #include<sys/select.h>
 
-#define BUF_SIZE 100
+#define BUF_SIZE 300
 void error_handling(char *buf);
 
 int main(int argc,char *argv[])
 {
+	char waitstring[]="wait";
 	int serv_sock,clnt_sock;
 	struct sockaddr_in serv_adr,clnt_adr;
 	struct timeval timeout;
@@ -72,7 +73,11 @@ int main(int argc,char *argv[])
 					else
 						p1fd=clnt_sock;
 				}
-				else
+				else if(p1fd==0||p2fd==0)
+				{
+					write(p1fd,waitstring,sizeof(waitstring));
+				}
+				else if(i==p1fd)
 				{
 					str_len=read(i,buf,BUF_SIZE);
 					if(str_len==0)
@@ -82,10 +87,25 @@ int main(int argc,char *argv[])
 						printf("closed client: %d\n",i);
 					}
 					else
-					{
-						write(p1fd,buf,str_len);
+					{ 
+						//printf("client 1:%s",buf);
 						write(p2fd,buf,str_len);
 					}
+				}
+				else if(i==p2fd)
+				{
+					str_len=read(i,buf,BUF_SIZE);
+					if(str_len==0)
+					{
+						FD_CLR(i,&reads);
+						close(i);
+						printf("closed client: %d\n",i);
+					}
+					else
+					{ 
+						//printf("client 1:%s",buf);
+						write(p1fd,buf,str_len);
+					}	
 
 				}
 			}

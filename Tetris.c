@@ -5,7 +5,12 @@
 #include <unistd.h>
 #include <termios.h>
 #include <time.h>
-#include "client.h"
+#include<string.h>
+#include<arpa/inet.h>
+#include<sys/socket.h>
+#include<sys/time.h>
+#include<sys/select.h>
+#include <pthread.h>
 
 #define LEFTEDGE 20
 #define RIGHTEDGE 18
@@ -15,7 +20,10 @@
 #define TAB 9
 #define q 113
 #define Q 81
+#define BUF_SIZE 1024
 
+
+void* server_read(void*);
 void interface();
 void singlemode(int,int);
 void vsmode(int,int);
@@ -47,6 +55,8 @@ void extra_block_print(int y, int x, int type_extra);
 void extra_block_delete(int y, int x);
 void score_print();
 void ghost_block();
+void competitor();
+
 
 int mode = 0;
 int keep_block_type = -1, score = 0;
@@ -54,7 +64,8 @@ int type[3];
 int block_type, keep_count= 0;
 int block_xpos, block_ypos, block_rotate, crush_flag = 0, before_inactive_check = 0; //ingame blcok x_pos, y_pos, block_rorate, crush_flag
 int new_block_flag = 1;
-
+int Other_Board[20][12];
+int Other_Real_Board[20][12];
 int Board[20][12] = {
 	{1,0,0,0,0,0,0,0,0,0,0,1},
 	{1,0,0,0,0,0,0,0,0,0,0,1},
@@ -77,6 +88,17 @@ int Board[20][12] = {
 	{1,0,0,0,0,0,0,0,0,0,0,1},
 	{1,1,1,1,1,1,1,1,1,1,1,1}
 };
+char server_address[] = "155.230.88.6";
+int portnum = 9999;
+int sock;
+char message[BUF_SIZE];
+char messageout[BUF_SIZE];
+int str_len,fd_max,fd_num;
+struct sockaddr_in serv_adr;
+fd_set reads,cpy_reads;
+struct timeval timecheck;
+pthread_t thread;
+
 
 
 int Real_game_Board[20][12];
@@ -345,7 +367,8 @@ void interface(){
 	init_pair(6,COLOR_MAGENTA,COLOR_MAGENTA);
 	init_pair(7,COLOR_CYAN,COLOR_CYAN);
 	init_pair(8,COLOR_WHITE,COLOR_WHITE);
-	
+	init_pair(11,COLOR_WHITE,COLOR_BLACK);
+
 	for(i=0; i<10; i++)
 	{
 		move((y/6)+i,(x/6)+5);
@@ -437,27 +460,11 @@ void interface(){
 	{
 		case 1:
 			mode=0;
-			for(int i=0; i<20; i++)
-			{
-				for(int j=0; j<12; j++)
-				{
-					if(i==19 || j==0 || j==11)
-						Real_game_Board[i][j]=1;
-					else
-						Real_game_Board[i][j]=0;
-				}
-			}
-			for(int i=0; i<20; i++)
-				for(int j=0; j<12; j++)
-					Board[i][j]=100;
-			score=0;
-			keep_block_type=-1;
-			new_block_flag=1;
 			single_play();
 			break;
 		case 2:
 			mode=1;
-			b();
+			single_play();
 			break;
 		case 3:
 			keyinformation();
@@ -529,10 +536,25 @@ void bye(int y, int x)
 }
 
 void single_play(){
+	for(int i=0; i<20; i++)
+	{
+		for(int j=0; j<12; j++)
+		{
+			if(i==19 || j==0 || j==11)
+				Real_game_Board[i][j]=1;
+			else
+				Real_game_Board[i][j]=0;
+		}
+	}
+	for(int i=0; i<20; i++)
+		for(int j=0; j<12; j++)
+			Board[i][j]=100;
+	score=0;
+	keep_block_type=-1;
+	new_block_flag=1;
 	char tetris[]  = "TETIRS";
 	int i, j, ch;
-	int y_pos = 0;
-	int x_pos = 0;
+	int y_pos = 0,x_pos=0;
 	int dir = 1;
 		
 	clear();
@@ -553,22 +575,72 @@ void single_play(){
 		type[i] = rand()% 16777216;
 		type[i] %= 7;
 	}
+	if(mode == 1){//sever와 connection
+		
+		sock=socket(PF_INET,SOCK_STREAM,0);
+		if(sock==-1){
+			mvprintw(60,70,"error_socket\n");
+			refresh();
+		}
+		memset(&serv_adr,0,sizeof(serv_adr));
+		serv_adr.sin_family=AF_INET;
+		serv_adr.sin_addr.s_addr=inet_addr(server_address);
+		serv_adr.sin_port=htons(portnum);
+		if(connect(sock, (struct sockaddr*)&serv_adr,sizeof(serv_adr))==-1){
+			mvprintw(60,70,"error_connect.\n");
+			refresh();
+		}
+		else{
+			mvprintw(60,70,"connected......\n");
+			refresh();
+		}
+		pthread_create(&thread,NULL,server_read,NULL);
+	}
 	
 	block_extra();
 	while(1){
+		
 		if(new_block_flag == 1){
-			extra_block_delete(9,WHITESPACE+40);
-			extra_block_delete(18,WHITESPACE+40);
+			extra_block_delete(9,WHITESPACE+58);
+			extra_block_delete(18,WHITESPACE+58);
 			extra_block_delete(13,2);
-			extra_block_print(9,WHITESPACE+40,type[1]);
-			extra_block_print(18,WHITESPACE+40,type[2]);
+			extra_block_print(9,WHITESPACE+58,type[1]);
+			extra_block_print(18,WHITESPACE+58,type[2]);
 			extra_block_print(13,2,keep_block_type);
 			score_print();
 			block_type = type[0];
-
 			if(new_block() == -1)		
 				return;
-		}		
+			if(mode == 1){
+				char BUF[10];
+				strcpy(messageout,"");
+				for(int i = 0; i<20; i++)
+				{
+					for(int j = 0; j<12;j++)
+					{
+						sprintf(BUF,"%d",Real_game_Board[i][j]);
+						strcat(messageout,BUF);
+					}
+					if(i !=19)
+						strcat(messageout,",");
+					else if(i == 19)
+						messageout[strlen(messageout)]=0;
+				}
+				write(sock,messageout,strlen(messageout));
+				//여기서 서버로 보내기
+			}
+			
+		}
+		if(mode == 1)//sever로 부터 받은 정보로 그림그리기
+		{
+			FD_ZERO(&reads);
+			FD_SET(sock,&reads);
+			//FD_SET(0,&reads);
+			fd_max=sock;
+		}
+		
+				
+		ghost_block();
 		draw_Borad(y_pos, x_pos);
 		//mmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmm
 		
@@ -598,14 +670,12 @@ void single_play(){
 					//draw_Borad(y_pos, x_pos);
 					break;
 				case SPACE :
-					while(crush_check(block_xpos, block_ypos+1,block_rotate) == true){
+					while(crush_check(block_xpos, block_ypos+1,block_rotate) == true)
+					{
 						key_down();
-					}
+					}					
 					before_inactive_check = 3;
 					break;
-				
-					
-					
 				case TAB:
 					for(int i=0; i<20; i++)
 						for(int j=0; j<12; j++)
@@ -639,19 +709,19 @@ void single_play(){
 					
 				default:
 					break;
-				}
-				if(crush_check(block_xpos,block_ypos+1, block_rotate)==false&&(before_inactive_check == 3)){//check_inactive
-					block_inactive();
-					score += 10;
-					if(keep_count == 2){
-						keep_count = 1;
-					}
-					delete_block();				
-				}
-				else if(crush_check(block_xpos,block_ypos+1, block_rotate)==false){
-					before_inactive_check++;
-				}
 			}
+			if(crush_check(block_xpos,block_ypos+1, block_rotate)==false&&(before_inactive_check == 3)){//check_inactive
+				block_inactive();
+				score += 10;
+				if(keep_count == 2){
+					keep_count = 1;
+				}
+				delete_block();				
+			}
+			else if(crush_check(block_xpos,block_ypos+1, block_rotate)==false){
+				before_inactive_check++;
+			}
+		}
 		else{
 			if(crush_check(block_xpos, block_ypos+1,block_rotate) == true){
 				before_inactive_check = 0;
@@ -670,12 +740,148 @@ void single_play(){
 			}
 			usleep(500000);
 		}
-			
+		
 	}
-}
+	
 	
 
 	
+}
+void* server_read(void *args){
+	int count= 10;
+	for(int i = 0; i<20;i++)
+	{
+		for(int j = 0; j<12; j++)
+			Other_Board[i][j] = 100;
+	}
+	while(1)
+	{
+		cpy_reads=reads;
+		timecheck.tv_sec=5;
+		timecheck.tv_usec=5000;
+		
+		/*if((fd_num=select(fd_max+1,&cpy_reads,0,0,NULL))==-1)
+		{	
+			printf("select error()");
+			break;
+		}		
+
+		if(fd_num==0)
+		{	
+			printf("Time out!!\n");
+			continue;
+		}
+		if(FD_ISSET(sock,&cpy_reads))
+		{*/
+			str_len=read(sock, message, BUF_SIZE-1);
+			message[str_len]=0;
+			
+			char *ptr = strtok(message, ",");
+			int i=0;
+			char sss[BUFSIZ];
+			while(ptr != NULL)
+			{
+				//printf("%s\n",ptr);
+				strcpy(sss,ptr);
+				for(int j=0; j<12; j++)
+				{
+					Other_Real_Board[i][j]=sss[j]-48;
+				}
+				ptr=strtok(NULL,",");
+				i++;
+				
+			}
+			/*for(int i = 0; i<20; i++)
+			{
+				for(int j = ; j<20; j++)
+				{
+
+				}
+			}*/
+			//competitor();
+		//}//other_print();
+	}
+}		
+
+void competitor()
+{
+    char wall[] = "■ ";   
+    char blank[] = "  ";
+    char fill[] = "□ ";
+	int x_pos2=0, y_pos2=2;
+    attron(COLOR_PAIR(11));
+    mvprintw(0,WHITESPACE+108,"COMPETITOR");
+    init_pair(1,COLOR_BLACK,COLOR_BLACK);
+    init_pair(2,COLOR_RED,COLOR_RED);
+    init_pair(3,COLOR_GREEN,COLOR_GREEN);
+    init_pair(4,COLOR_YELLOW,COLOR_YELLOW);
+    init_pair(5,COLOR_BLUE,COLOR_BLUE);
+    init_pair(6,COLOR_MAGENTA,COLOR_MAGENTA);
+    init_pair(7,COLOR_CYAN,COLOR_CYAN);
+    init_pair(8,COLOR_WHITE,COLOR_WHITE);
+    init_color(77,372,843,372);
+    init_pair(11,COLOR_WHITE,COLOR_BLACK);   
+   
+    for(int i = 0; i<20;i++){
+        for(int j = 0; j<12; j++){
+            if(Other_Board[i][j]!=Other_Real_Board[i][j])
+            {
+                move(y_pos2 + i, WHITESPACE+100+x_pos2+(2*j));
+                if(Other_Real_Board[i][j] == 0)
+                {
+                    attron(COLOR_PAIR(1));
+                    addstr(blank);
+                }
+                   
+                else if(Other_Real_Board[i][j] == 1)
+                {
+                    attron(COLOR_PAIR(11));
+                    addstr(wall);
+                }
+                else if(Other_Real_Board[i][j] == 2)
+                {
+                    switch(block_type)
+                    {
+                        case 0:
+                            attron(COLOR_PAIR(2));
+                            break;
+                        case 1:
+                            attron(COLOR_PAIR(3));
+                            break;                           
+                        case 2:
+                            attron(COLOR_PAIR(4));
+                            break;
+                        case 3:
+                            attron(COLOR_PAIR(5));
+                            break;
+                        case 4:
+                            attron(COLOR_PAIR(6));
+                            break;
+                        case 5:
+                            attron(COLOR_PAIR(7));
+                            break;
+                        case 6:
+                            attron(COLOR_PAIR(8));
+                            break;
+                    }
+                    addstr(fill);
+                }
+                else if(Other_Real_Board[i][j] == 3)
+                {
+                    attroff(COLOR_PAIR(8));
+                    addstr(fill);
+                }
+                refresh();
+               
+            }       
+        }
+    }
+   
+    for(int i = 0 ; i<20; i++)
+        for(int j = 0; j<12; j++)
+            Other_Board[i][j] = Other_Real_Board[i][j];
+   
+} 
 
 void draw_Borad(int y_pos, int x_pos){
 	char wall[] = "■ ";	
@@ -708,7 +914,7 @@ void draw_Borad(int y_pos, int x_pos){
 					
 				else if(Real_game_Board[i/2][j/2] == 1)
 				{
-					attron(COLOR_PAIR(77));
+					attron(COLOR_PAIR(11));
 					addstr(wall);
 				}
 				else if(Real_game_Board[i/2][j/2] == 2)
@@ -757,7 +963,43 @@ void draw_Borad(int y_pos, int x_pos){
 	for(int i = 0 ; i<20; i++)
 		for(int j = 0; j<12; j++)
 			Board[i][j] = Real_game_Board[i][j]; 
-	
+	y_pos = 2;
+	x_pos = 0;
+	for(int i = 0; i<20; i++)
+	{
+		
+		for(int j = 0; j<12; j++)
+		{
+			if(Other_Board[i][j]!=Other_Real_Board[i][j])
+			{
+				move(y_pos + i, WHITESPACE+100+x_pos+(2*j));
+				switch(Other_Real_Board[i][j]){
+					case 0:
+						attron(COLOR_PAIR(1));
+						addstr(blank);
+						break;
+					case 1:
+						attron(COLOR_PAIR(11));
+						addstr(wall);
+						break;
+					case 2:
+						attron(COLOR_PAIR(7));
+						addstr(fill);
+						break;
+					case 3:
+						attron(COLOR_PAIR(11));
+						addstr(fill);
+						break;
+				}
+			
+			}
+		}
+	}
+			
+			
+	for(int i = 0 ; i<20; i++)
+		for(int j = 0; j<12; j++)
+			Other_Board[i][j] = Other_Real_Board[i][j]; 
 	
 }
 int kbhit(void){
@@ -1283,4 +1525,8 @@ void ghost_block()
 			}
 		}
 	}
+	
+
+	
 }
+
