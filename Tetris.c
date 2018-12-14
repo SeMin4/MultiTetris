@@ -22,40 +22,50 @@
 #define Q 81
 #define BUF_SIZE 1024
 
+//서버와 client 사이 통신
+void* server_read(void*);//서버로 부터 데이터 들어오는 부분을 읽는 함수
 
-void* server_read(void*);
-void interface();
+//화면 첫 ui 구성 함수
+void interface();//인터페이스 구현
 void singlemode(int,int);
 void vsmode(int,int);
 void keyinformation();
 void help(int,int);
 void bye(int,int);
 void single_play();
-void b();
-void c();
-int kbhit(void);
-void current_block_delte();
-void draw_Borad(int, int);
-void block_extra();
-int new_block();
-void key_left();
-void key_right();
-void key_down();
-void key_up();
-int crush_check(int, int, int);
-void block_inactive();
-void delete_block();
-void yesorno1();
-void yesorno2();
-void quit();
-void keep_change();
-void change(int *a , int *b);
-void gameover();
-void extra_block_print(int y, int x, int type_extra);
-void extra_block_delete(int y, int x);
-void score_print();
-void ghost_block();
-void competitor();
+
+//화면 출력 관련 함수
+void draw_Borad(int, int);//게임판 그리기
+void block_extra();//옆에 부가적인 부분 생성
+void extra_block_print(int y, int x, int type_extra);//옆에 부가적인 부분 프린트
+void extra_block_delete(int y, int x);//옆에 부가적인 부분 프린트시 원래 있던걸을 삭제
+void yesorno1();//나가시겠습니까 version 1
+void yesorno2();//나가시겠습니까 version 2
+void score_print();//점수 프린트
+void ghost_block();//그림자 생성수
+
+//블록 생성 관련 함수
+int new_block();// 새로운 블록 생성
+void change(int *a , int *b);//다음 블록 생성시 사용하는 함수
+
+//키 value를 처리하는 함수
+int kbhit(void);//키 value가 있는지 없는지 계속하여 체크한뒤에 반환하는 함수
+void key_left();//key 왼쪽
+void key_right();//key 오른쪽수
+void key_down();//key 아래쪽
+void key_up();//key 위쪽 (회전)
+void quit();//key q or Q 시 반응
+void keep_change();//tab 버튼 누를시 keep 해주기
+void current_block_delte();//keep 시 현재 블록 삭제성
+
+//게임 내부 설정 관련 함수
+int crush_check(int, int, int);//충돌 체크
+void block_inactive();//블록 굳히기
+void delete_block();//한줄 채울시 블록 삭제
+
+//게임 종료 체크 함수
+void gameover();//게임오버 체크수
+void game_close();//게임 종료
 
 
 int mode = 0;
@@ -66,7 +76,7 @@ int block_xpos, block_ypos, block_rotate, crush_flag = 0, before_inactive_check 
 int new_block_flag = 1;
 int Other_Board[20][12];
 int Other_Real_Board[20][12];
-int Board[20][12] = {
+int Board[20][12] = {//첫번째 판 초기화화
 	{1,0,0,0,0,0,0,0,0,0,0,1},
 	{1,0,0,0,0,0,0,0,0,0,0,1},
 	{1,0,0,0,0,0,0,0,0,0,0,1},
@@ -101,9 +111,8 @@ pthread_t thread;
 
 
 
-int Real_game_Board[20][12];
-int Shadow_game_Board[20][12];
-int Block[7][4][5][5] = {
+int Real_game_Board[20][12];//진짜 게임 보드 판 비교하기 위해서 한개 더있음
+int Block[7][4][5][5] = {//블록 초기화 4차원 배열을 이용용
 	{
 		{
 			{0,0,0,0,0},
@@ -315,7 +324,7 @@ int Block[7][4][5][5] = {
 		}
 	}//"ㅡ 블록"
 };
-
+//타이틀 효과를 위한 배열열
 int title[10][60]=
 	{
 		{1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1},
@@ -332,13 +341,14 @@ int title[10][60]=
 
 int main(){
 
-	setlocale(LC_CTYPE, "ko_KR.utf-8");
-	srand( (unsigned)time(NULL) );
+	setlocale(LC_CTYPE, "ko_KR.utf-8");//한글 설정
+	srand( (unsigned)time(NULL) );//랜덤 함수 설정
 	stdscr = initscr();
 
-	interface();
+	interface();//인터페이스 함수 호출출
 	return 0;
 }
+//인터페이스 함수 호출
 void interface(){
 	
 
@@ -358,7 +368,7 @@ void interface(){
 	}
 	clear();
 	start_color();
-
+	//색설정
 	init_pair(1,COLOR_BLACK,COLOR_BLACK);
 	init_pair(2,COLOR_RED,COLOR_RED);
 	init_pair(3,COLOR_GREEN,COLOR_GREEN);
@@ -368,7 +378,8 @@ void interface(){
 	init_pair(7,COLOR_CYAN,COLOR_CYAN);
 	init_pair(8,COLOR_WHITE,COLOR_WHITE);
 	init_pair(11,COLOR_WHITE,COLOR_BLACK);
-
+	
+	//타이틀 색깔 입히기
 	for(i=0; i<10; i++)
 	{
 		move((y/6)+i,(x/6)+5);
@@ -417,7 +428,7 @@ void interface(){
 	refresh();	
 	
 	singlemode(y,x);
-	
+	//타이틀에서 밑에 부분 출력해주기 위해서 쓰는 부분 키를 밑으로 내릴때 마다 다른 함수를 호출 mode로 구분
 	while(1)
 	{
 
@@ -456,6 +467,7 @@ void interface(){
 			continue;
 		
 	}
+	//count로 구분하여 모드를 구분 모드 함수 호출 멀티도 역시 싱글을 호출 안에서 구분분
 	switch(count)
 	{
 		case 1:
@@ -473,12 +485,14 @@ void interface(){
 			clear();
 			refresh();
 			endwin();
+			//game_close();
 			exit(0);
 					
 	}
 	interface();
 
 }
+//타이틀 밑에 출력하는 함수 밑에꺼 전부다다
 void singlemode(int y, int x)
 {
 	standend();
@@ -534,8 +548,9 @@ void bye(int y, int x)
 	mvprintw((y/2)+5, (x/3)+17,"*******************************");
 	refresh();
 }
-
+//싱글 플레이 함수 호출
 void single_play(){
+	//판 초기화화
 	for(int i=0; i<20; i++)
 	{
 		for(int j=0; j<12; j++)
@@ -546,6 +561,7 @@ void single_play(){
 				Real_game_Board[i][j]=0;
 		}
 	}
+	//출력시 구분하기 위해서 board에 쓰레기 vlaue 집어 넣기기
 	for(int i=0; i<20; i++)
 		for(int j=0; j<12; j++)
 			Board[i][j]=100;
@@ -565,7 +581,12 @@ void single_play(){
 	scrollok(stdscr, TRUE);
 
 	move(y_pos,x_pos + 8);//move(y, x); 
+	
 	addstr(tetris);
+	mvprintw(33,WHITESPACE+58,"곧ㄱ=");
+	mvprintw(34,WHITESPACE+58,"2015116484황보승우");
+	mvprintw(35,WHITESPACE+58,"2015110115오세민");
+	mvprintw(36,WHITESPACE+58,"2015113955천지완");
 	refresh();
 	y_pos += 2;
 	
@@ -577,16 +598,16 @@ void single_play(){
 	}
 	if(mode == 1){//sever와 connection
 		
-		sock=socket(PF_INET,SOCK_STREAM,0);
+		sock=socket(PF_INET,SOCK_STREAM,0);//server와 통신하기 위하여 socket을 생성
 		if(sock==-1){
 			mvprintw(60,70,"error_socket\n");
 			refresh();
 		}
-		memset(&serv_adr,0,sizeof(serv_adr));
+		memset(&serv_adr,0,sizeof(serv_adr));//connection 하기전 초기화
 		serv_adr.sin_family=AF_INET;
 		serv_adr.sin_addr.s_addr=inet_addr(server_address);
 		serv_adr.sin_port=htons(portnum);
-		if(connect(sock, (struct sockaddr*)&serv_adr,sizeof(serv_adr))==-1){
+		if(connect(sock, (struct sockaddr*)&serv_adr,sizeof(serv_adr))==-1){//connection 하는 함수
 			mvprintw(60,70,"error_connect.\n");
 			refresh();
 		}
@@ -594,12 +615,12 @@ void single_play(){
 			mvprintw(60,70,"connected......\n");
 			refresh();
 		}
-		pthread_create(&thread,NULL,server_read,NULL);
+		pthread_create(&thread,NULL,server_read,NULL);//스레드를 사용하여 서버로 부터 정보를 받아오는 부분
 	}
 	
-	block_extra();
+	block_extra();//엑스트라 블럭을 생성
 	while(1){
-		
+		//flag 변수를 이용하여 새로운 블록이 만들어 져야 하는지 항상 체크
 		if(new_block_flag == 1){
 			extra_block_delete(9,WHITESPACE+58);
 			extra_block_delete(18,WHITESPACE+58);
@@ -609,7 +630,7 @@ void single_play(){
 			extra_block_print(13,2,keep_block_type);
 			score_print();
 			block_type = type[0];
-			if(new_block() == -1)		
+			if(new_block() == -1)//새로운 블록 생성에 들어왔지만 new block을 만들지 못할 경우 game over 처리		
 				return;
 			if(mode == 1){
 				char BUF[10];
@@ -640,13 +661,13 @@ void single_play(){
 		}
 		
 				
-		ghost_block();
-		draw_Borad(y_pos, x_pos);
+		ghost_block();//그림자 출력
+		draw_Borad(y_pos, x_pos);//메인으로 게임 안에 판을 출력 시키는 부분
 		//mmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmm
-		
+		//kbhit 함수에서 키입력을 구분하여 키입력이 있는 경우 안에 함수를 호출		
 		if(kbhit()){
 			ch = getch();
-			switch(ch){//getch() 
+			switch(ch){//getch() 모든 경우 키를 체크해주고 그 키에 맡는 함수를 호출 항상 키를 받았을때 충돌이 있는지 없는지 검사
 				case KEY_DOWN :
 					if(crush_check(block_xpos, block_ypos+1,block_rotate) == true){
 						before_inactive_check = 0;
@@ -674,14 +695,15 @@ void single_play(){
 					{
 						key_down();
 					}					
-					before_inactive_check = 3;
+					before_inactive_check = 3;//굳히기 변수로써 스페이스를 누를 경우 바로 블럭 굳히기
 					break;
-				case TAB:
+				case TAB://탭을 누른 경우 keep 하기
+					//그림자 삭제
 					for(int i=0; i<20; i++)
 						for(int j=0; j<12; j++)
 							if(Real_game_Board[i][j]==-1)
 								Real_game_Board[i][j]=0;
-
+					//킵에 들어가 있는 블록을 생성
 					if(keep_block_type == -1){
 						current_block_delte();
 						keep_change();
@@ -689,10 +711,11 @@ void single_play(){
 					}	
 					else
 					{
+						//keep 카운트는 keep을 한 횟수를 체크 2번인 경우에는 킵을 하지 못함
 						if(keep_count == 2){
 
 						}
-						else if(keep_count == 1){
+						else if(keep_count == 1){//킵이 가능능
 							current_block_delte();
 							change(&keep_block_type,&type[0]);
 							new_block_flag = 1;
@@ -710,7 +733,7 @@ void single_play(){
 				default:
 					break;
 			}
-			if(crush_check(block_xpos,block_ypos+1, block_rotate)==false&&(before_inactive_check == 3)){//check_inactive
+			if(crush_check(block_xpos,block_ypos+1, block_rotate)==false&&(before_inactive_check == 3)){//check_inactive 블럭 굳히기 블럭이 굳혀지면 delte block 호출하여 지워져야 하는지도 검사사
 				block_inactive();
 				score += 10;
 				if(keep_count == 2){
@@ -718,10 +741,12 @@ void single_play(){
 				}
 				delete_block();				
 			}
+			//블록이 아직 굳히면 안되서 3번 카운트 하는 부분
 			else if(crush_check(block_xpos,block_ypos+1, block_rotate)==false){
 				before_inactive_check++;
 			}
 		}
+		//아무런 키입력이 없는 경우 자동으로 키다운 함수를 호출하여 한칸씩 밑으로 내리기 충돌검사 굳히기 모두 동일 
 		else{
 			if(crush_check(block_xpos, block_ypos+1,block_rotate) == true){
 				before_inactive_check = 0;
@@ -749,30 +774,18 @@ void single_play(){
 }
 void* server_read(void *args){
 	int count= 10;
-	for(int i = 0; i<20;i++)
+	for(int i = 0; i<20;i++)//다른 상대방의 블록을 처리하기 위해 상대방 블록을 초기화
 	{
 		for(int j = 0; j<12; j++)
 			Other_Board[i][j] = 100;
 	}
-	while(1)
+	while(1)//서버로 부터 thread를 이용하여 무한루프를 통하여 정보를 읽는 함수
 	{
 		cpy_reads=reads;
 		timecheck.tv_sec=5;
 		timecheck.tv_usec=5000;
 		
-		/*if((fd_num=select(fd_max+1,&cpy_reads,0,0,NULL))==-1)
-		{	
-			printf("select error()");
-			break;
-		}		
-
-		if(fd_num==0)
-		{	
-			printf("Time out!!\n");
-			continue;
-		}
-		if(FD_ISSET(sock,&cpy_reads))
-		{*/
+	
 			str_len=read(sock, message, BUF_SIZE-1);
 			message[str_len]=0;
 			
@@ -791,104 +804,17 @@ void* server_read(void *args){
 				i++;
 				
 			}
-			/*for(int i = 0; i<20; i++)
-			{
-				for(int j = ; j<20; j++)
-				{
-
-				}
-			}*/
-			//competitor();
-		//}//other_print();
+		
 	}
 }		
 
-void competitor()
-{
-    char wall[] = "■ ";   
-    char blank[] = "  ";
-    char fill[] = "□ ";
-	int x_pos2=0, y_pos2=2;
-    attron(COLOR_PAIR(11));
-    mvprintw(0,WHITESPACE+108,"COMPETITOR");
-    init_pair(1,COLOR_BLACK,COLOR_BLACK);
-    init_pair(2,COLOR_RED,COLOR_RED);
-    init_pair(3,COLOR_GREEN,COLOR_GREEN);
-    init_pair(4,COLOR_YELLOW,COLOR_YELLOW);
-    init_pair(5,COLOR_BLUE,COLOR_BLUE);
-    init_pair(6,COLOR_MAGENTA,COLOR_MAGENTA);
-    init_pair(7,COLOR_CYAN,COLOR_CYAN);
-    init_pair(8,COLOR_WHITE,COLOR_WHITE);
-    init_color(77,372,843,372);
-    init_pair(11,COLOR_WHITE,COLOR_BLACK);   
-   
-    for(int i = 0; i<20;i++){
-        for(int j = 0; j<12; j++){
-            if(Other_Board[i][j]!=Other_Real_Board[i][j])
-            {
-                move(y_pos2 + i, WHITESPACE+100+x_pos2+(2*j));
-                if(Other_Real_Board[i][j] == 0)
-                {
-                    attron(COLOR_PAIR(1));
-                    addstr(blank);
-                }
-                   
-                else if(Other_Real_Board[i][j] == 1)
-                {
-                    attron(COLOR_PAIR(11));
-                    addstr(wall);
-                }
-                else if(Other_Real_Board[i][j] == 2)
-                {
-                    switch(block_type)
-                    {
-                        case 0:
-                            attron(COLOR_PAIR(2));
-                            break;
-                        case 1:
-                            attron(COLOR_PAIR(3));
-                            break;                           
-                        case 2:
-                            attron(COLOR_PAIR(4));
-                            break;
-                        case 3:
-                            attron(COLOR_PAIR(5));
-                            break;
-                        case 4:
-                            attron(COLOR_PAIR(6));
-                            break;
-                        case 5:
-                            attron(COLOR_PAIR(7));
-                            break;
-                        case 6:
-                            attron(COLOR_PAIR(8));
-                            break;
-                    }
-                    addstr(fill);
-                }
-                else if(Other_Real_Board[i][j] == 3)
-                {
-                    attroff(COLOR_PAIR(8));
-                    addstr(fill);
-                }
-                refresh();
-               
-            }       
-        }
-    }
-   
-    for(int i = 0 ; i<20; i++)
-        for(int j = 0; j<12; j++)
-            Other_Board[i][j] = Other_Real_Board[i][j];
-   
-} 
 
 void draw_Borad(int y_pos, int x_pos){
 	char wall[] = "■ ";	
 	char blank[] = "  ";
 	char fill[] = "□ ";
 	char shadow[] = "▧ ";
-
+	//색깔 초기화
 	init_pair(1,COLOR_BLACK,COLOR_BLACK);
 	init_pair(2,COLOR_RED,COLOR_RED);
 	init_pair(3,COLOR_GREEN,COLOR_GREEN);
@@ -900,24 +826,24 @@ void draw_Borad(int y_pos, int x_pos){
 	init_color(77,372,843,372);
 	init_pair(11,COLOR_WHITE,COLOR_BLACK);
 
-	
+	// 리얼게임보드에서 0=공백 1=벽 2=현재 보드에서 움직일수있는 블럭 3=굳힌 블럭 -1=그림자
 	for(int i = 0; i<40;i++){
 		for(int j = 0; j<24; j++){
 			if(Board[i/2][j/2]!=Real_game_Board[i/2][j/2])
 			{
 				move(y_pos + i, WHITESPACE+x_pos+(2*j));
-				if(Real_game_Board[i/2][j/2] == 0)
+				if(Real_game_Board[i/2][j/2] == 0) // 공백채우기 ( 검은색 )
 				{
 					attron(COLOR_PAIR(1));
 					addstr(blank);
 				}
 					
-				else if(Real_game_Board[i/2][j/2] == 1)
+				else if(Real_game_Board[i/2][j/2] == 1) // 벽 ( 흰색 )
 				{
 					attron(COLOR_PAIR(11));
 					addstr(wall);
 				}
-				else if(Real_game_Board[i/2][j/2] == 2)
+				else if(Real_game_Board[i/2][j/2] == 2) // 현재 이동할 수 있는 블럭 ( 블럭마다 색 다름 )
 				{
 					switch(block_type)
 					{
@@ -945,7 +871,7 @@ void draw_Borad(int y_pos, int x_pos){
 					}
 					addstr(fill);
 				}
-				else if(Real_game_Board[i/2][j/2] == 3)
+				else if(Real_game_Board[i/2][j/2] == 3) // 굳힌 블럭 
 				{
 					attroff(COLOR_PAIR(8));
 					addstr(fill);
@@ -960,12 +886,12 @@ void draw_Borad(int y_pos, int x_pos){
 			}		
 		}
 	}
-	for(int i = 0 ; i<20; i++)
+	for(int i = 0 ; i<20; i++) // 게임판 비교하기전에 그 전거 board에 저장
 		for(int j = 0; j<12; j++)
 			Board[i][j] = Real_game_Board[i][j]; 
 	y_pos = 2;
 	x_pos = 0;
-	for(int i = 0; i<20; i++)
+	for(int i = 0; i<20; i++) // 이거는 멀티모드에서 상대방 판 띄어주는 부분
 	{
 		
 		for(int j = 0; j<12; j++)
@@ -974,19 +900,19 @@ void draw_Borad(int y_pos, int x_pos){
 			{
 				move(y_pos + i, WHITESPACE+100+x_pos+(2*j));
 				switch(Other_Real_Board[i][j]){
-					case 0:
+					case 0: // 공백
 						attron(COLOR_PAIR(1));
 						addstr(blank);
 						break;
-					case 1:
+					case 1: // 벽
 						attron(COLOR_PAIR(11));
 						addstr(wall);
 						break;
-					case 2:
+					case 2: // 이동가능 블럭
 						attron(COLOR_PAIR(7));
 						addstr(fill);
 						break;
-					case 3:
+					case 3: // 굳힌거
 						attron(COLOR_PAIR(11));
 						addstr(fill);
 						break;
@@ -996,12 +922,13 @@ void draw_Borad(int y_pos, int x_pos){
 		}
 	}
 			
-			
+		// 상대방 게임판도 전꺼랑 비교하기 위해 이전내용 저장	
 	for(int i = 0 ; i<20; i++)
 		for(int j = 0; j<12; j++)
 			Other_Board[i][j] = Other_Real_Board[i][j]; 
 	
 }
+// 키입력 함수수
 int kbhit(void){
 	int ch = getch();
 	if(ch != ERR){
@@ -1011,6 +938,7 @@ int kbhit(void){
 		return 0;
 	}
 }
+// 현재 게임판에 떠있는 블럭 삭제제
 void current_block_delte(){
 	for(int i = 0; i< 5; i++){
 		for(int j = 0; j< 5; j++){
@@ -1020,6 +948,7 @@ void current_block_delte(){
 		}
 	}
 }
+// 처음 킵했을때 다음블럭들 한칸씩 땡겨오고 새로운 블럭 생성성
 void keep_change(){
 	change(&keep_block_type,&type[0]);
 	type[0] = type[1];
@@ -1028,12 +957,16 @@ void keep_change(){
 	type[2] = type[2]% 7;
 	new_block_flag = 1;
 }
+
+// 한칸씩 땡겨올때 쓰는 함수수
 void change(int *a, int *b){
 	int temp;
 	temp = *a;
 	*a = *b;
 	*b = temp;
 }
+
+// 새로운 블럭 생성
 int new_block(){
 	block_xpos = 4;
 	block_ypos = 0;	
@@ -1042,14 +975,14 @@ int new_block(){
 
 	for(int i = 0; i<5; i++){			
 		for(int j = 0; j<5; j++){
-				if(Block [block_type][block_rotate][i][j] == 2)
+				if(Block [block_type][block_rotate][i][j] == 2) 
 				{
-					if(Real_game_Board[block_ypos+i][block_xpos+j] == 3){
+					if(Real_game_Board[block_ypos+i][block_xpos+j] == 3){ // 게임오버 체크
 						gameover();
 						return -1;
 					}
 					else{
-						Real_game_Board[block_ypos+i][block_xpos+j] = 2;
+						Real_game_Board[block_ypos+i][block_xpos+j] = 2; // 새로운 블럭 생성
 					}
 					
 				}
@@ -1063,6 +996,7 @@ int new_block(){
 	//block_extra();
 	
 }
+// 키 왼쪽쪽
 void key_left(){
 	for(int i=0; i<20; i++)
 	{
@@ -1090,6 +1024,7 @@ void key_left(){
 		}
 	}
 }
+// 키오른쪽쪽
 void key_right(){
 	for(int i=0; i<20; i++)
 	{
@@ -1117,6 +1052,7 @@ void key_right(){
 		}
 	}
 }
+//키 다운
 void key_down(){
 	for(int i=0; i<20; i++)
 	{
@@ -1144,6 +1080,7 @@ void key_down(){
 		}
 	}
 }
+//키 위로 ( 회전 )
 void key_up(){
 	for(int i=0; i<20; i++)
 	{
@@ -1172,6 +1109,8 @@ void key_up(){
 		}
 	}
 }
+
+// 충돌 검사 -> 모든 키입력에 대해 했을때 굳혀진블럭이 겹쳐지면 충돌 
 int crush_check(int check_bx, int check_by, int check_rotate){
 	for(int i = 0; i <5; i++){
 		for(int j = 0; j<5; j++){
@@ -1181,6 +1120,7 @@ int crush_check(int check_bx, int check_by, int check_rotate){
 	}
 	return true;
 }
+// 블럭 굳히기
 void block_inactive(){
 	for(int i = 0; i< 5; i++){
 		for(int j = 0; j< 5; j++){
@@ -1189,6 +1129,7 @@ void block_inactive(){
 			}
 		}
 	}
+	// 굳히고 블럭 땡겨오기, 블럭 flag 1 주기 -> 블럭 생성
 	type[0] = type[1];
 	type[1] = type[2];
 	type[2] = rand()%16777216;
@@ -1196,6 +1137,7 @@ void block_inactive(){
 	new_block_flag = 1;
 }
 
+// 게임판 한줄 찼을때 한줄 지우기
 void delete_block(){
 	int sum = 0;
 	for(int i = 19; i>=0; i--){
@@ -1217,6 +1159,8 @@ void delete_block(){
 		}
 	}
 }
+
+//게임 오버
 void gameover(){
 	int y, x, ch;
 	clear();
@@ -1227,48 +1171,7 @@ void gameover(){
 
 }
 
-void b(){
-	int ch;
-	clear();
-	mvprintw(30,60," 안녕하세요 황보승우입니다.");
-	refresh();
-	while(1)
-	{
-		
-		noecho();
-		ch = getch();
-		if( (ch == 81) || (ch== 113) )
-		{
-			yesorno1();
-			while(1)
-			{
-				ch = getch();
-				if( ch == 10 )
-				{
-					break;
-				}
-				else if( ch == KEY_RIGHT )
-				{
-					yesorno2();
-					ch = getch();
-					if( ch == KEY_RIGHT)
-					{
-						yesorno1();
-						continue;
-					}
-					else if( ch == 10 )
-						continue;
-						
-				}
-			}
-		}
-		else
-			continue;
-		
-		break;
-	}
-//	mode=1;
-}
+// 키 설명 누르면 출력하는 함수
 void keyinformation()
 {
 	int ch;
@@ -1320,6 +1223,8 @@ void keyinformation()
 		break;
 	}	
 }
+
+// q 누르면 출력하는 함수
 void quit()
 {
 	int ch;
@@ -1357,13 +1262,16 @@ void quit()
 	
 	
 }
-void c()
+
+// 게임 끝내기
+void game_close()
 {
 	
 	endwin();
 //	mode=1;
 }
 
+// 나가시겠습니까?
 void yesorno1()
 {
 	
@@ -1380,6 +1288,7 @@ void yesorno1()
 
 }
 
+// 나가시겠습니까? version 2
 void yesorno2()
 {
 	clear();
@@ -1395,6 +1304,7 @@ void yesorno2()
 
 }
 
+// 옆에 부분 출력
 void block_extra()
 {
 	
@@ -1425,6 +1335,7 @@ void block_extra()
 	refresh();
 }
 
+// 옆부분 뭐나올지 블럭 출력
 void extra_block_print(int y, int x, int type_extra)
 {
 	init_pair(1,COLOR_BLACK,COLOR_BLACK);
@@ -1452,6 +1363,8 @@ void extra_block_print(int y, int x, int type_extra)
 	}
 	
 }
+
+// 옆부분 블럭 땡겨올때 원래꺼 지우고 새로 넣어야해서 만든 함수
 void extra_block_delete(int y, int x)
 {
 	init_pair(1,COLOR_BLACK,COLOR_BLACK);
@@ -1470,6 +1383,8 @@ void extra_block_delete(int y, int x)
 	}
 	refresh();
 }
+
+// 점수 출력
 void score_print(){
 	init_pair(10,COLOR_WHITE,COLOR_BLACK);
 	attroff(COLOR_PAIR(10));
@@ -1479,13 +1394,16 @@ void score_print(){
 	printw("My score : %10d",score);
 }
 
+
+// 그림자 만드는거
 void ghost_block()
 {
 	int ypos=block_ypos;
 	int i,j;
 	
 	
-
+	// 키다운을 존나해서 리얼게임보드에 3을 만나면 그 위치 기억해서 그 위치에 그림자 만드는거임
+	// 하나씩 내리면서 2를 0으로 바꾸고 ypos ++해주고 제일 밑으로 왔을때 그 배열에 -1 넣는다
 	while(crush_check(block_xpos,ypos+1,block_rotate) == true)
 	{
 		for(int i = 0; i< 5; i++)
